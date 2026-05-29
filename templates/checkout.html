@@ -1,0 +1,134 @@
+﻿{% load static %}
+{# Checkout confirmation page — review order before placing #}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checkout — Campus Secondhand Book Trading Platform</title>
+  <link rel="stylesheet" href="{% static 'css/base.css' %}">
+  <style>
+    .checkout-page { max-width: 860px; margin: 28px auto; padding: 0 20px; }
+    .checkout-heading { font-size: 24px; font-weight: 800; color: #071a3a; margin-bottom: 6px; }
+    .checkout-sub { font-size: 14px; color: #6b7280; margin-bottom: 24px; }
+    .order-item { display: flex; align-items: center; gap: 16px; padding: 16px; background: #fff; border-radius: 12px; box-shadow: var(--shadow); margin-bottom: 12px; }
+    .order-cover { width: 60px; height: 84px; border-radius: 6px; object-fit: cover; background: url('{% static "img/book_placeholder.svg" %}') center/contain no-repeat, #e8f1ff; flex-shrink: 0; }
+    .order-info { flex: 1; }
+    .order-title { font-size: 15px; font-weight: 700; color: #071a3a; }
+    .order-author { font-size: 13px; color: #6b7280; margin-top: 1px; }
+    .order-seller { font-size: 12px; color: #9ca3af; margin-top: 4px; }
+    .order-price { font-size: 18px; font-weight: 800; color: #2b6cff; min-width: 80px; text-align: right; }
+    .summary-card { background: #fff; border-radius: 16px; padding: 24px; box-shadow: var(--shadow); margin-top: 20px; }
+    .summary-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 14px; border-bottom: 1px solid #f0f6ff; }
+    .summary-row:last-child { border-bottom: none; }
+    .total-label { font-size: 20px; font-weight: 800; color: #071a3a; }
+    .total-amount { font-size: 20px; font-weight: 800; color: #2b6cff; }
+    .confirm-notice { background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 10px; padding: 14px 18px; margin-top: 20px; font-size: 13px; color: #166534; line-height: 1.6; }
+    .skip-notice { background: #fffbeb; border: 1.5px solid #fde68a; border-radius: 10px; padding: 10px 14px; margin-bottom: 16px; font-size: 13px; color: #92400e; }
+    .action-row { display: flex; gap: 12px; margin-top: 24px; flex-wrap: wrap; }
+  </style>
+</head>
+<body>
+
+{% if messages %}
+<div class="flash-wrap">
+  {% for message in messages %}<div class="flash {{ message.tags }}">{{ message }}</div>{% endfor %}
+</div>
+{% endif %}
+
+<header class="header">
+  <div class="header-left">
+    <a href="{% url 'books:home' %}" style="text-decoration:none;display:flex;align-items:center;gap:10px;">
+      <img src="{% static 'img/logo.png' %}" class="logo" alt="Logo">
+      <span class="site-title">Campus Secondhand Book Trading Platform</span>
+    </a>
+  </div>
+  <div class="header-right">
+    <a href="{% url 'books:cart' %}" class="cart-btn">
+      🛒 Cart
+      {% if cart_count > 0 %}<span class="cart-badge">{{ cart_count }}</span>{% endif %}
+    </a>
+    <button class="btn-outline" onclick="location.href='{% url 'users:profile' %}'">Profile</button>
+    <form method="post" action="{% url 'users:logout' %}" style="display:inline;">
+      {% csrf_token %}
+      <button type="submit" class="btn-solid">Logout</button>
+    </form>
+  </div>
+</header>
+
+<div class="checkout-page">
+  <h1 class="checkout-heading">Confirm Your Order</h1>
+  <p class="checkout-sub">Review your items before placing the order. Once confirmed, the books will be marked as sold.</p>
+
+  {% if skipped > 0 %}
+  <div class="skip-notice">
+    ⚠ {{ skipped }} item(s) were removed — they are already sold or listed by you.
+  </div>
+  {% endif %}
+
+  {# Order items / 订单条目 #}
+  {% for book in cart_books %}
+  <div class="order-item">
+    {% if book.cover %}
+    <div class="order-cover" style="background:url('{{ book.cover.url }}') center/cover;"></div>
+    {% else %}
+    <div class="order-cover"></div>
+    {% endif %}
+    <div class="order-info">
+      <div class="order-title">{{ book.title }}</div>
+      <div class="order-author">by {{ book.author }}</div>
+      <div class="order-seller">
+        Seller: <strong>{{ book.seller.get_full_name|default:book.seller.username }}</strong>
+        {% if book.university %} · {{ book.university.abbreviation|default:book.university.name }}{% endif %}
+      </div>
+    </div>
+    <div class="order-price">
+      {% if book.price %}${{ book.price }}{% else %}<span style="color:#10b981;">Free</span>{% endif %}
+    </div>
+  </div>
+  {% endfor %}
+
+  {# Price summary / 费用汇总 #}
+  <div class="summary-card">
+    <div class="summary-row">
+      <span style="color:#6b7280;">Subtotal ({{ cart_books|length }} book{{ cart_books|length|pluralize }})</span>
+      <span style="font-weight:700;">${{ subtotal|floatformat:2 }}</span>
+    </div>
+    <div class="summary-row">
+      <span style="color:#6b7280;">
+        Platform Fee (5%)
+        <span style="font-size:11px;background:#fef3c7;color:#92400e;padding:1px 5px;border-radius:4px;margin-left:4px;">Commercial</span>
+      </span>
+      <span style="color:#ef4444;font-weight:700;">+${{ platform_fee|floatformat:2 }}</span>
+    </div>
+    <div class="summary-row" style="margin-top:8px;">
+      <span class="total-label">Total</span>
+      <span class="total-amount">${{ total|floatformat:2 }}</span>
+    </div>
+  </div>
+
+  <div class="confirm-notice">
+    ✅ <strong>What happens next:</strong> Your order will be recorded and the books marked as sold.
+    You will receive each seller's contact info so you can arrange payment and delivery directly.
+    The platform's <strong>5% service fee</strong> applies to all paid transactions.
+  </div>
+
+  {# Action buttons / 操作按钮 #}
+  <div class="action-row">
+    <form method="post" action="{% url 'books:checkout' %}" style="flex:1;">
+      {% csrf_token %}
+      <button type="submit" class="btn-primary"
+              style="width:100%;padding:14px;font-size:16px;font-weight:700;">
+        ✓ Place Order
+      </button>
+    </form>
+    <a href="{% url 'books:cart' %}" class="btn-outline"
+       style="flex:1;padding:14px;font-size:16px;text-align:center;text-decoration:none;border-radius:10px;">
+      ← Back to Cart
+    </a>
+  </div>
+</div>
+
+</body>
+</html>
+

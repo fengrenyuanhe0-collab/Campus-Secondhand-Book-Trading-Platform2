@@ -1,0 +1,49 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In — Campus Book Market</title>
+  <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+  <style>
+    .field-error { color:#ef4444; font-size:12px; margin-top:4px; display:block; }
+    .alert { padding:10px 14px; border-radius:8px; margin-bottom:14px; font-size:14px; }
+    .alert-error { background:#fee2e2; color:#991b1b; border-left:4px solid #ef4444; }
+    .alert-success { background:#d1fae5; color:#065f46; border-left:4px solid #10b981; }
+  </style>
+</head>
+<body class="auth-body">
+  <div class="auth-card">
+    <a href="{% url 'books:home' %}" style="display:block;text-align:center;text-decoration:none;color:#6b7280;font-size:13px;margin-bottom:6px;">← Back to Market</a>
+
+    <img src="{% static 'img/logo.png' %}" style="display:block;margin:0 auto 12px;width:52px;border-radius:50%;" alt="logo">
+    <h2 class="auth-title" style="text-align:center;">Welcome Back</h2>
+    <p class="auth-sub" style="text-align:center;margin-bottom:22px;">Sign in to your account</p>
+
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert {% if message.tags == 'error' %}alert-error{% else %}alert-success{% endif %}">{{ message }}</div>
+    {% endfor %}
+    {% endif %}
+
+    <form method="post" action="{% url 'users:login' %}">
+      {% csrf_token %}
+      {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+      <label>Email or Username</label>
+      <input type="text" name="username" placeholder="your@email.com" required autofocus
+             value="{% if request.POST.username %}{{ request.POST.username }}{% endif %}">
+      <label style="margin-top:12px;">Password</label>
+      <input type="password" name="password" placeholder="••••••••" required>
+      <button type="submit" class="btn-primary" style="width:100%;margin-top:20px;padding:13px;font-size:16px;">Sign In</button>
+    </form>
+
+    <p class="auth-footer" style="margin-top:18px;">
+      No account? <a href="{% url 'users:register' %}" style="color:#2b6cff;font-weight:600;">Register free</a>
+    </p>
+    <p class="auth-footer" style="margin-top:6px;color:#9ca3af;font-size:12px;">
+      Demo: <code>alice</code> / <code>password123</code>
+    </p>
+  </div>
+</body>
+</html>

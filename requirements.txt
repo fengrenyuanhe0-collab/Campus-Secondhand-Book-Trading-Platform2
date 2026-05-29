@@ -1,0 +1,11 @@
+# 核心 Django / Core Django
+Django>=4.2,<5.0
+djangorestframework>=3.14
+
+# 图片处理（书籍封面、广告图片）/ Image handling (book covers, ad images)
+Pillow>=10.0
+
+# Redis 缓存（可选，无 Redis 时自动降级到内存缓存）
+# Redis cache (optional, falls back to in-memory if unavailable)
+redis>=5.0
+django-redis>=5.4

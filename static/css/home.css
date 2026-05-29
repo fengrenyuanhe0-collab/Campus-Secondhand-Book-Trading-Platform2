@@ -1,0 +1,285 @@
+/* home.css — 主页样式 / Home page styles */
+
+/* ────────────────────────────────
+   筛选条 / Filter bar
+   ──────────────────────────────── */
+.filters {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 12px;
+  background: #fff;
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+  overflow-x: auto;
+}
+
+/* All filter controls share the row equally / 筛选控件等分满行 */
+.filter-select {
+  flex: 1 1 0;       /* equal share, basis 0 so all start equal */
+  min-width: 0;
+  width: 0 !important; /* let flex-grow control width, not content */
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1.5px solid #e2e8f0;
+  font-size: 13px;
+  color: #071a3a;
+  background: white;
+  cursor: pointer;
+  outline: none;
+  box-sizing: border-box;
+}
+.filter-select:focus { border-color: #2b6cff; }
+
+/* ────────────────────────────────
+   三栏布局 / Three-column layout
+   左侧分类 | 书单主体 | 右侧广告
+   Left cats | Book grid | Right ads
+   ──────────────────────────────── */
+.layout {
+  display: grid;
+  grid-template-columns: 150px 1fr 220px;
+  gap: 12px;
+  align-items: start;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px 12px;
+}
+
+/* ────────────────────────────────
+   左侧分类栏 / Left category sidebar
+   ──────────────────────────────── */
+.left-cats {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: sticky;
+  top: 72px;   /* 吸顶，跟在 header 下方 / Sticky below header */
+}
+.cat {
+  background: #f0f6ff;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 1.5px solid rgba(43,108,204,0.08);
+  color: #07366b;
+  font-weight: 600;
+  font-size: 13px;
+  transition: background 0.15s, border-color 0.15s;
+  text-align: left;
+}
+.cat:hover { background: #dbeafe; border-color: #93c5fd; }
+.cat-active {
+  background: #2b6cff !important;
+  color: #fff !important;
+  border-color: #2b6cff !important;
+}
+
+/* ────────────────────────────────
+   书籍网格 / Book grid
+   ──────────────────────────────── */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+}
+.card {
+  background: var(--card);
+  border-radius: 12px;
+  padding: 8px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  cursor: pointer;
+  align-items: center;
+  transition: transform 0.15s, box-shadow 0.15s;
+  /* 允许拖拽到购物车 / Draggable to cart */
+  user-select: none;
+}
+.card:hover { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(2,6,23,0.10); }
+
+/* 书籍封面 / Book cover image */
+.cover {
+  width: 120px;
+  height: 168px;
+  border-radius: 6px;
+  background: #e6e6e6;
+  background-size: cover;
+  background-position: center;
+  flex-shrink: 0;
+}
+/* 无封面占位 / No-cover placeholder */
+.no-cover {
+  background: linear-gradient(135deg, #c7d4f0 0%, #e8f1ff 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+}
+.no-cover::after { content: "📚"; }
+
+.card .price { font-weight: 700; color: #2b6cff; margin-top: 2px; font-size: 14px; }
+.card .title { font-weight: 600; color: #071a3a; font-size: 12px; line-height: 1.3; }
+.card .author { font-size: 11px; color: var(--muted); }
+
+/* Auto-cover styles are in base.css (shared across all pages) */
+
+/* 卡片上的添加购物车按钮 / Add-to-cart button on card */
+.card-cart-btn {
+  width: 100%;
+  padding: 5px;
+  border: none;
+  border-radius: 6px;
+  background: #eff6ff;
+  color: #2b6cff;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.card-cart-btn:hover { background: #2b6cff; color: #fff; }
+.card-cart-btn.in-cart { background: #d1fae5; color: #065f46; }
+
+/* 拖拽高亮 / Drag-over highlight on cart drop zone */
+.cart-drop-zone.drag-over {
+  outline: 3px dashed #2b6cff;
+  background: #eff6ff;
+  border-radius: 12px;
+}
+
+/* ────────────────────────────────
+   右侧广告/赞助栏 / Right ad sidebar
+   ──────────────────────────────── */
+.right-ad {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: sticky;
+  top: 72px;
+}
+.right-ad .poster { width: 100%; border-radius: 10px; box-shadow: var(--shadow); }
+
+/* 广告位卡片 / Ad placement card */
+.ad-card {
+  background: #fff;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  border: 1px solid rgba(0,0,0,0.05);
+}
+.ad-card img { width: 100%; height: 110px; object-fit: cover; }
+.ad-card-body { padding: 8px 12px 10px; }
+.ad-card-title { font-size: 12px; font-weight: 700; color: #071a3a; }
+.ad-label {
+  display: inline-block;
+  font-size: 10px;
+  background: #fef3c7;
+  color: #92400e;
+  border-radius: 4px;
+  padding: 1px 5px;
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+/* 赞助商区域 / Sponsor section */
+.sponsor-section {
+  background: #fff;
+  border-radius: 10px;
+  padding: 12px;
+  box-shadow: var(--shadow);
+}
+.sponsor-section h4 {
+  font-size: 12px;
+  font-weight: 700;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+.sponsor-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+  border-bottom: 1px solid #f0f6ff;
+  font-size: 12px;
+  color: #071a3a;
+  font-weight: 600;
+}
+.sponsor-item:last-child { border-bottom: none; }
+.sponsor-tier {
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-weight: 700;
+}
+.tier-platinum { background: #e8f4f8; color: #1e40af; }
+.tier-gold { background: #fef3c7; color: #92400e; }
+.tier-silver { background: #f1f5f9; color: #475569; }
+.tier-bronze { background: #fff7ed; color: #c2410c; }
+.tier-donor { background: #f0fdf4; color: #166534; }
+
+/* 卖书按钮 / Sell-a-book CTA */
+.sell-cta {
+  display: block;
+  padding: 12px;
+  background: linear-gradient(90deg, #ff7b1a, #f59e0b);
+  color: #fff;
+  border-radius: 10px;
+  text-align: center;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 15px;
+  box-shadow: 0 4px 14px rgba(255,123,26,0.25);
+  transition: opacity 0.2s;
+}
+.sell-cta:hover { opacity: 0.92; }
+
+/* 5%服务费说明 / 5% fee notice */
+.fee-notice {
+  font-size: 11px;
+  color: #9ca3af;
+  text-align: center;
+  margin-top: 6px;
+}
+
+/* ────────────────────────────────
+   分页 / Pagination
+   ──────────────────────────────── */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  padding: 24px 0;
+}
+.page-link {
+  padding: 7px 18px;
+  background: #2b6cff;
+  color: #fff;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 14px;
+}
+.page-info { color: #6b7280; font-size: 13px; }
+
+/* ────────────────────────────────
+   响应式 / Responsive
+   ──────────────────────────────── */
+@media (max-width: 1200px) {
+  .layout { grid-template-columns: 160px 1fr; }
+  .right-ad { display: none; }
+  .grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 800px) {
+  .layout { grid-template-columns: 1fr; padding: 12px; }
+  .left-cats { flex-direction: row; flex-wrap: wrap; position: static; }
+  .cat { font-size: 12px; padding: 6px 10px; }
+  .grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .header-center { display: none; }
+}
+@media (max-width: 420px) {
+  .grid { grid-template-columns: 1fr; }
+}

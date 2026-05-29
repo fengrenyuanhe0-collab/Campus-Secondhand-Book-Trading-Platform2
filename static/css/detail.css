@@ -1,0 +1,9 @@
+.detail-page{padding:22px;max-width:1000px;margin:0 auto}
+.detail-container{display:flex;gap:28px;align-items:flex-start}
+.detail-cover{
+  width:320px;height:420px;background:#ddd;border-radius:12px;
+  background-size:cover;background-position:center;box-shadow:var(--shadow);
+}
+.detail-info h1{font-size:28px;margin-bottom:6px;color:#07366b}
+.muted{color:var(--muted)}
+.meta-row{display:flex;gap:18px;margin-top:8px}

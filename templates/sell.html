@@ -1,0 +1,272 @@
+﻿{% load static %}
+{# Book listing / edit form #}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% if action == 'Edit' %}Edit Listing{% else %}Sell a Book{% endif %} — Campus Secondhand Book Trading Platform</title>
+  <link rel="stylesheet" href="{% static 'css/base.css' %}">
+  <style>
+    .sell-form { max-width: 900px; margin: 24px auto; background: var(--card); padding: 32px; border-radius: 16px; box-shadow: var(--shadow); }
+    /* Standard two-column row / 两列行 */
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+    /* Four-column row for academic hierarchy / 学校体系四列行 */
+    .form-row-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+    .form-row-full { margin-bottom: 14px; }
+    .field-error { color: #ef4444; font-size: 12px; margin-top: 3px; display: block; }
+    .form-errors { background: #fee2e2; border-left: 4px solid #ef4444; border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; font-size: 14px; color: #991b1b; }
+    label { font-size: 13px; font-weight: 600; color: #071a3a; display: block; margin-bottom: 4px; }
+    .fee-info { background: #fffbeb; border: 1.5px solid #fde68a; border-radius: 10px; padding: 14px 18px; margin-bottom: 20px; font-size: 13px; color: #78350f; }
+    #imagePreview { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+    .preview-img { width: 80px; height: 112px; object-fit: cover; border-radius: 6px; border: 2px solid #e8f1ff; }
+    /* Responsive: stack on small screens / 小屏堆叠 */
+    @media (max-width: 700px) {
+      .form-row, .form-row-4 { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 480px) {
+      .form-row, .form-row-4 { grid-template-columns: 1fr; }
+      .sell-form { padding: 20px 16px; }
+    }
+  </style>
+</head>
+<body>
+
+{% if messages %}
+<div class="flash-wrap">
+  {% for message in messages %}<div class="flash {{ message.tags }}">{{ message }}</div>{% endfor %}
+</div>
+{% endif %}
+
+{# Header #}
+<header class="header">
+  <div class="header-left">
+    <a href="{% url 'books:home' %}" style="text-decoration:none;display:flex;align-items:center;gap:10px;">
+      <img src="{% static 'img/logo.png' %}" class="logo" alt="Logo">
+      <span class="site-title">Campus Secondhand Book Trading Platform</span>
+    </a>
+  </div>
+  <div class="header-right">
+    <a href="{% url 'books:cart' %}" class="cart-btn">🛒 Cart</a>
+    <button class="btn-outline" onclick="location.href='{% url 'users:profile' %}'">Profile</button>
+    <form method="post" action="{% url 'users:logout' %}" style="display:inline;">
+      {% csrf_token %}
+      <button type="submit" class="btn-solid">Logout</button>
+    </form>
+  </div>
+</header>
+
+<div class="sell-form">
+  <h2 style="color:#071a3a;margin-bottom:4px;">
+    {% if action == 'Edit' %}Edit Listing{% else %}Sell / Donate a Book{% endif %}
+  </h2>
+  <p style="color:#6b7280;font-size:14px;margin-bottom:20px;">
+    Fill in the details so buyers can find your book easily.
+  </p>
+
+  {# 5% platform fee notice #}
+  <div class="fee-info">
+    <strong>Platform Service Fee:</strong>
+    A <strong>5%</strong> fee is deducted from the sale price on completion.
+    Example: sell for $20 → you receive <strong>$19</strong>, platform earns <strong>$1</strong>.
+  </div>
+
+  {% if form.non_field_errors %}
+  <div class="form-errors">{% for e in form.non_field_errors %}<p>{{ e }}</p>{% endfor %}</div>
+  {% endif %}
+
+  <form method="post" enctype="multipart/form-data" action="">
+    {% csrf_token %}
+
+    {# Title + Author #}
+    <div class="form-row">
+      <div>
+        <label>Book Title <span style="color:red">*</span></label>
+        {{ form.title }}
+        {% if form.title.errors %}<span class="field-error">{{ form.title.errors.0 }}</span>{% endif %}
+      </div>
+      <div>
+        <label>Author <span style="color:red">*</span></label>
+        {{ form.author }}
+        {% if form.author.errors %}<span class="field-error">{{ form.author.errors.0 }}</span>{% endif %}
+      </div>
+    </div>
+
+    
+    <div class="form-row-4">
+      <div>
+        <label>University</label>
+        {{ form.university }}
+        {% if form.university.errors %}<span class="field-error">{{ form.university.errors.0 }}</span>{% endif %}
+      </div>
+      <div>
+        <label>College / Faculty</label>
+        {# Datalist autocomplete populated by JS when university changes / JS 动态填充学院建议 #}
+        {{ form.college }}
+        <datalist id="college-suggestions"></datalist>
+        {% if form.college.errors %}<span class="field-error">{{ form.college.errors.0 }}</span>{% endif %}
+      </div>
+      <div>
+        <label>Major / Program</label>
+        {{ form.program }}
+        {% if form.program.errors %}<span class="field-error">{{ form.program.errors.0 }}</span>{% endif %}
+      </div>
+      <div>
+        <label>Grade Level</label>
+        {{ form.grade }}
+        {% if form.grade.errors %}<span class="field-error">{{ form.grade.errors.0 }}</span>{% endif %}
+      </div>
+    </div>
+
+    {# Course + Category #}
+    <div class="form-row">
+      <div>
+        <label>Course</label>
+        {{ form.course }}
+        {% if form.course.errors %}<span class="field-error">{{ form.course.errors.0 }}</span>{% endif %}
+      </div>
+      <div>
+        <label>Subject Category</label>
+        {{ form.category }}
+        {% if form.category.errors %}<span class="field-error">{{ form.category.errors.0 }}</span>{% endif %}
+      </div>
+    </div>
+
+    {# Price + Condition #}
+    <div class="form-row">
+      <div>
+        <label>Price (USD) <span style="color:#6b7280;font-weight:400;">— leave blank for free</span></label>
+        {{ form.price }}
+        {% if form.price.errors %}<span class="field-error">{{ form.price.errors.0 }}</span>{% endif %}
+        {# Secondhand books are cheap — suggest max $10 / 二手书建议不超过$10 #}
+        <span style="font-size:11px;color:#9ca3af;display:block;margin-top:2px;">
+          Secondhand books typically $1–$10 (≈ 90–900 RUB)
+        </span>
+        <span id="feeHint" style="font-size:12px;color:#9ca3af;display:block;margin-top:1px;"></span>
+      </div>
+      <div>
+        <label>Condition</label>
+        {{ form.condition }}
+        {% if form.condition.errors %}<span class="field-error">{{ form.condition.errors.0 }}</span>{% endif %}
+      </div>
+    </div>
+
+    {# Year + Cover (primary photo) #}
+    <div class="form-row">
+      <div>
+        <label>Year Published</label>
+        {{ form.year_published }}
+        {% if form.year_published.errors %}<span class="field-error">{{ form.year_published.errors.0 }}</span>{% endif %}
+      </div>
+      <div>
+        <label>Cover Photo (primary)</label>
+        {% if book and book.cover %}
+        <div style="margin-bottom:8px;">
+          <img src="{{ book.cover.url }}" style="height:70px;border-radius:6px;object-fit:cover;" alt="Current cover">
+          <span style="font-size:12px;color:#6b7280;margin-left:8px;">Upload new to replace</span>
+        </div>
+        {% endif %}
+        {{ form.cover }}
+        {% if form.cover.errors %}<span class="field-error">{{ form.cover.errors.0 }}</span>{% endif %}
+      </div>
+    </div>
+
+    {# Additional photos — show book condition from multiple angles / 多张照片展示书籍真实状况 #}
+    <div class="form-row-full">
+      <label>Additional Photos
+        <span style="color:#6b7280;font-weight:400;">— show condition from multiple angles (optional)</span>
+      </label>
+      {% if book and book.images.exists %}
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;">
+        {% for img in book.images.all %}
+        <div style="position:relative;">
+          <img src="{{ img.image.url }}" class="preview-img" alt="Photo {{ forloop.counter }}">
+          <a href="?delete_img={{ img.pk }}"
+             style="position:absolute;top:-5px;right:-5px;background:#ef4444;color:#fff;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:11px;text-decoration:none;font-weight:700;"
+             onclick="return confirm('Remove this photo?')">×</a>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      <input type="file" name="extra_images" multiple accept="image/*" id="extraImagesInput">
+      <div id="imagePreview"></div>
+    </div>
+
+    {# Description #}
+    <div class="form-row-full">
+      <label>Description</label>
+      {{ form.description }}
+      {% if form.description.errors %}<span class="field-error">{{ form.description.errors.0 }}</span>{% endif %}
+    </div>
+
+    {# Submit / Cancel #}
+    <div style="display:flex;gap:12px;margin-top:28px;">
+      <button type="submit" class="btn-primary" style="flex:1;padding:13px;font-size:16px;">
+        {% if action == 'Edit' %}Save Changes{% else %}List Book{% endif %}
+      </button>
+      <a href="{% url 'users:profile' %}" class="btn-outline"
+         style="flex:1;padding:13px;font-size:16px;text-align:center;text-decoration:none;">Cancel</a>
+    </div>
+  </form>
+</div>
+
+<script>
+// ── College autocomplete: populate datalist when university changes ──
+// 切换学校时自动更新学院建议列表
+const collegeSuggestions = {{ college_suggestions_json|safe }};
+const uniSelect = document.getElementById('id_university');
+const datalist  = document.getElementById('college-suggestions');
+
+function updateCollegeSuggestions(uniId) {
+  if (!datalist) return;
+  datalist.innerHTML = '';
+  (collegeSuggestions[String(uniId)] || []).forEach(name => {
+    const opt = document.createElement('option');
+    opt.value = name;
+    datalist.appendChild(opt);
+  });
+}
+if (uniSelect) {
+  uniSelect.addEventListener('change', () => updateCollegeSuggestions(uniSelect.value));
+  // Populate on page load with the current selection / 页面加载时根据当前学校填充
+  updateCollegeSuggestions(uniSelect.value);
+}
+
+// ── Dynamic fee calculator ──
+const priceInput = document.querySelector('input[name="price"]');
+const feeHint    = document.getElementById('feeHint');
+if (priceInput && feeHint) {
+  priceInput.addEventListener('input', () => {
+    const p = parseFloat(priceInput.value);
+    if (!isNaN(p) && p > 0) {
+      feeHint.textContent = `Fee: $${(p*0.05).toFixed(2)} (5%) · You receive: $${(p*0.95).toFixed(2)}`;
+    } else {
+      feeHint.textContent = '';
+    }
+  });
+}
+
+// ── Preview selected additional photos ──
+const extraInput = document.getElementById('extraImagesInput');
+const preview    = document.getElementById('imagePreview');
+if (extraInput && preview) {
+  extraInput.addEventListener('change', () => {
+    preview.innerHTML = '';
+    Array.from(extraInput.files).forEach(file => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        const img = document.createElement('img');
+        img.src = e.target.result;
+        img.className = 'preview-img';
+        img.title = file.name;
+        preview.appendChild(img);
+      };
+      reader.readAsDataURL(file);
+    });
+  });
+}
+</script>
+
+</body>
+</html>
+

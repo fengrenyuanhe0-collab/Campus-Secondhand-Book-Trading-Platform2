@@ -1,0 +1,57 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Account — Campus Book Market</title>
+  <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+  <style>
+    .field-error { color:#ef4444; font-size:12px; margin-top:4px; display:block; }
+    .alert { padding:10px 14px; border-radius:8px; margin-bottom:14px; font-size:14px; }
+    .alert-error { background:#fee2e2; color:#991b1b; border-left:4px solid #ef4444; }
+  </style>
+</head>
+<body class="auth-body">
+  <div class="auth-card">
+    <a href="{% url 'users:login' %}" style="display:block;text-align:center;text-decoration:none;color:#6b7280;font-size:13px;margin-bottom:6px;">← Back to Login</a>
+
+    <img src="{% static 'img/logo.png' %}" style="display:block;margin:0 auto 12px;width:52px;border-radius:50%;" alt="logo">
+    <h2 class="auth-title" style="text-align:center;">Create Account</h2>
+    <p class="auth-sub" style="text-align:center;margin-bottom:22px;">Join the campus book community</p>
+
+    {% if form.non_field_errors %}
+    <div class="alert alert-error">
+      {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+    </div>
+    {% endif %}
+
+    <form method="post" action="{% url 'users:register' %}">
+      {% csrf_token %}
+      <label>Username</label>
+      <input type="text" name="username" placeholder="Choose a username" required
+             value="{{ form.username.value|default:'' }}">
+      {% if form.username.errors %}<span class="field-error">{{ form.username.errors.0 }}</span>{% endif %}
+
+      <label style="margin-top:12px;">Email</label>
+      <input type="email" name="email" placeholder="your@email.com" required
+             value="{{ form.email.value|default:'' }}">
+      {% if form.email.errors %}<span class="field-error">{{ form.email.errors.0 }}</span>{% endif %}
+
+      <label style="margin-top:12px;">Password</label>
+      <input type="password" name="password" placeholder="At least 6 characters" required>
+      {% if form.password.errors %}<span class="field-error">{{ form.password.errors.0 }}</span>{% endif %}
+
+      <label style="margin-top:12px;">Confirm Password</label>
+      <input type="password" name="password2" placeholder="Repeat password" required>
+      {% if form.password2.errors %}<span class="field-error">{{ form.password2.errors.0 }}</span>{% endif %}
+
+      <button type="submit" class="btn-primary" style="width:100%;margin-top:20px;padding:13px;font-size:16px;">Create Account</button>
+    </form>
+
+    <p class="auth-footer" style="margin-top:18px;">
+      Already have an account? <a href="{% url 'users:login' %}" style="color:#2b6cff;font-weight:600;">Sign in</a>
+    </p>
+  </div>
+</body>
+</html>

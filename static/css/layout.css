@@ -1,0 +1,20 @@
+/* header */
+.site-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 20px;background:linear-gradient(180deg,#fff,#f7fbff);
+  border-bottom:1px solid rgba(0,0,0,0.04);position:sticky;top:0;z-index:50;
+}
+.header-left{display:flex;align-items:center;gap:12px}
+.logo{width:64px;height:64px;object-fit:contain}
+.site-title{font-size:20px;font-weight:800;color:#07366b}
+.header-center{flex:1;margin:0 20px}
+.header-right{display:flex;align-items:center;gap:8px}
+.search{width:100%;padding:10px 14px;border-radius:24px;border:1px solid rgba(0,0,0,0.06)}
+
+/* footer */
+.site-footer{
+  padding:18px 0;text-align:center;color:var(--muted);margin-top:20px;
+}
+
+/* grid layout */
+.page{padding:18px 22px}

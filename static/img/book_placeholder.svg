@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 168">
+  <!-- Book cover placeholder / 书籍封面占位图 -->
+  <!-- Book body / 书体 -->
+  <rect width="120" height="168" rx="5" fill="#dde8f5"/>
+  <!-- Spine / 书脊 -->
+  <rect x="0" y="0" width="14" height="168" rx="3" fill="#b8cee8"/>
+  <rect x="10" y="0" width="4" height="168" fill="#a5bedd" opacity="0.7"/>
+  <!-- Title lines / 标题线 -->
+  <rect x="22" y="24" width="82" height="7" rx="3" fill="#8baed0" opacity="0.7"/>
+  <rect x="22" y="36" width="60" height="5" rx="2" fill="#8baed0" opacity="0.45"/>
+  <!-- Center illustration area / 中央插图区 -->
+  <rect x="22" y="54" width="82" height="62" rx="6" fill="#c4d8ed" opacity="0.8"/>
+  <!-- Open book icon / 翻开书图标 -->
+  <path d="M46 78 Q61 70 76 78 Q61 86 46 78Z" fill="#8baed0" opacity="0.6"/>
+  <path d="M46 78 L46 95 Q61 87 61 78" fill="#9bb7d0" opacity="0.7"/>
+  <path d="M76 78 L76 95 Q61 87 61 78" fill="#8baed0" opacity="0.7"/>
+  <!-- Author lines / 作者行 -->
+  <rect x="22" y="132" width="50" height="5" rx="2" fill="#8baed0" opacity="0.45"/>
+  <rect x="22" y="142" width="34" height="4" rx="2" fill="#8baed0" opacity="0.3"/>
+</svg>

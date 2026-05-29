@@ -1,0 +1,16 @@
+.landing-page{
+  background: url('assets/img/bg_landing.jpg') center/cover no-repeat;
+  display:flex;align-items:center;justify-content:center;height:100vh;
+}
+.landing-inner{
+  text-align:center;background:rgba(255,255,255,0.85);
+  padding:48px;border-radius:18px;box-shadow:var(--shadow);max-width:900px;
+}
+.landing-logo{width:96px;height:96px;margin:0 auto 12px;display:block}
+.landing-title{font-size:40px;font-weight:800;margin-bottom:8px;color:#07366b}
+.landing-sub{font-size:24px;margin-bottom:22px;color:#0b274d}
+
+.btn-enter{
+  display:inline-block;padding:12px 28px;border-radius:10px;
+  background:var(--accent);color:white;font-weight:800;text-decoration:none;
+}

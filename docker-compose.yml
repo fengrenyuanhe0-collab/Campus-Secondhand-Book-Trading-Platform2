@@ -1,0 +1,38 @@
+# ──────────────────────────────────────────────
+# docker-compose.yml
+# Campus Secondhand Book Trading Platform
+# 校园二手书交易平台 Docker Compose 配置
+# ──────────────────────────────────────────────
+
+services:
+  # ── 主应用服务 / Main web application ──
+  web:
+    build: .
+    # 镜像名称 / Image name
+    image: campus-books:latest
+    container_name: campus_books_web
+    # 端口映射：宿主机8000 → 容器8000 / Port mapping: host:8000 → container:8000
+    ports:
+      - "1234:8000"
+    # 挂载持久化卷 / Mount persistent volumes
+    volumes:
+      # 媒体文件（书籍封面等）/ Media files (book covers, ad images, etc.)
+      - ./media:/app/media
+      # SQLite 数据库 / SQLite database
+      - ./db.sqlite3:/app/db.sqlite3
+      # 日志目录 / Log directory
+      - ./logs:/app/logs
+    environment:
+      # Django 调试模式（生产环境改为 false）/ Debug mode (set to false in production)
+      - DEBUG=True
+      # 允许的主机 / Allowed hosts
+      - ALLOWED_HOSTS=*
+    # 健康检查 / Health check
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    # 总是自动重启 / Always restart on failure
+    restart: unless-stopped

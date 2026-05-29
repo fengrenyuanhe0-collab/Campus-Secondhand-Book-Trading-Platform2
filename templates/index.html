@@ -1,0 +1,88 @@
+{% load static %}
+{# Landing page — background image + logo + slogan + Enter button #}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Campus Secondhand Book Trading Platform</title>
+  <link rel="stylesheet" href="{% static 'css/base.css' %}">
+  <style>
+    /* 落地页全屏背景图 / Full-screen background image for landing page */
+    body {
+      min-height: 100vh;
+      background: url('{% static "img/background.jpg" %}') center / cover no-repeat;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    /* 半透明卡片覆盖层 / Semi-transparent overlay card */
+    .index-card {
+      background: rgba(255, 255, 255, 0.87);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      border-radius: 20px;
+      padding: 52px 48px;
+      text-align: center;
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.18);
+      max-width: 460px;
+      width: 100%;
+    }
+    /* 圆形 Logo / Circular logo */
+    .index-logo {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      object-fit: cover;
+      display: block;
+      margin: 0 auto 22px;
+      border: 3px solid rgba(255, 255, 255, 0.9);
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.14);
+    }
+    /* 标题 / Title */
+    .index-title {
+      font-size: 22px;
+      font-weight: 800;
+      color: #071a3a;
+      margin-bottom: 10px;
+      line-height: 1.35;
+    }
+    /* 标语 / Slogan */
+    .index-slogan {
+      font-size: 15px;
+      color: #6b7280;
+      margin-bottom: 32px;
+      font-style: italic;
+    }
+    /* Enter 按钮 / Enter button */
+    .index-enter {
+      display: inline-block;
+      padding: 13px 44px;
+      background: linear-gradient(90deg, #2b6cff, #60a5fa);
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 16px;
+      border-radius: 12px;
+      text-decoration: none;
+      letter-spacing: 0.3px;
+      transition: opacity 0.2s, transform 0.12s;
+    }
+    .index-enter:hover { opacity: 0.92; transform: translateY(-1px); }
+    @media (max-width: 480px) {
+      .index-card { padding: 36px 24px; }
+      .index-title { font-size: 19px; }
+    }
+  </style>
+</head>
+<body>
+  {# 落地页卡片：logo + 标题 + 标语 + 进入按钮 / Landing card #}
+  <div class="index-card">
+    <img src="{% static 'img/logo.png' %}" class="index-logo"
+         alt="Campus Secondhand Book Trading Platform Logo">
+    <h1 class="index-title">Campus Secondhand Book<br>Trading Platform</h1>
+    <p class="index-slogan">Let every book be read again.</p>
+    <a href="{% url 'books:home' %}" class="index-enter">Enter</a>
+  </div>
+</body>
+</html>

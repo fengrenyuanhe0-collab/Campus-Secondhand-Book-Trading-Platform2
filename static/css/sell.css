@@ -1,0 +1,13 @@
+.sell-form{
+  max-width:900px;margin:20px auto;background:var(--card);
+  padding:18px;border-radius:12px;box-shadow:var(--shadow);
+}
+.form-row{
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:12px;margin-bottom:12px;
+}
+.form-row-full{margin-bottom:12px}
+.input, textarea, select{
+  width:100%;padding:10px;border-radius:8px;
+  border:1px solid rgba(0,0,0,0.08);
+}

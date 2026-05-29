@@ -1,0 +1,189 @@
+﻿{% load static %}
+{# Order history — buyer purchases + seller sales #}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Orders — Campus Secondhand Book Trading Platform</title>
+  <link rel="stylesheet" href="{% static 'css/base.css' %}">
+  <style>
+    .orders-page { max-width: 900px; margin: 28px auto; padding: 0 20px; }
+    .section-heading { font-size: 20px; font-weight: 800; color: #071a3a; margin: 28px 0 14px; border-bottom: 2px solid #e8f1ff; padding-bottom: 8px; }
+    .order-card { display: flex; align-items: center; gap: 14px; background: #fff; border-radius: 12px; box-shadow: var(--shadow); padding: 14px 16px; margin-bottom: 10px; }
+    .order-cover { width: 52px; height: 72px; border-radius: 6px; object-fit: cover; background: url('{% static "img/book_placeholder.svg" %}') center/contain no-repeat, #e8f1ff; flex-shrink: 0; }
+    .order-info { flex: 1; }
+    .order-title { font-size: 15px; font-weight: 700; color: #071a3a; }
+    .order-meta { font-size: 12px; color: #9ca3af; margin-top: 3px; line-height: 1.5; }
+    .order-price { font-size: 16px; font-weight: 800; color: #2b6cff; white-space: nowrap; }
+    .status-badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+    .status-pending  { background: #fef3c7; color: #92400e; }
+    .status-confirmed{ background: #dbeafe; color: #1e40af; }
+    .status-completed{ background: #d1fae5; color: #065f46; }
+    .status-cancelled{ background: #fee2e2; color: #991b1b; }
+    .empty-state { text-align: center; padding: 48px 20px; background: #fff; border-radius: 12px; box-shadow: var(--shadow); color: #6b7280; }
+    .tab-bar { display: flex; gap: 0; border-bottom: 2px solid #e8f1ff; margin-bottom: 20px; }
+    .tab { padding: 10px 22px; font-size: 14px; font-weight: 600; color: #6b7280; cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px; text-decoration: none; }
+    .tab.active { color: #2b6cff; border-bottom-color: #2b6cff; }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+  </style>
+</head>
+<body>
+
+{% if messages %}
+<div class="flash-wrap">
+  {% for message in messages %}<div class="flash {{ message.tags }}">{{ message }}</div>{% endfor %}
+</div>
+{% endif %}
+
+<header class="header">
+  <div class="header-left">
+    <a href="{% url 'books:home' %}" style="text-decoration:none;display:flex;align-items:center;gap:10px;">
+      <img src="{% static 'img/logo.png' %}" class="logo" alt="Logo">
+      <span class="site-title">Campus Secondhand Book Trading Platform</span>
+    </a>
+  </div>
+  <div class="header-right">
+    <a href="{% url 'books:cart' %}" class="cart-btn">
+      🛒 Cart
+      {% if cart_count > 0 %}<span class="cart-badge">{{ cart_count }}</span>{% endif %}
+    </a>
+    <button class="btn-outline" onclick="location.href='{% url 'users:profile' %}'">Profile</button>
+    <form method="post" action="{% url 'users:logout' %}" style="display:inline;">
+      {% csrf_token %}
+      <button type="submit" class="btn-solid">Logout</button>
+    </form>
+  </div>
+</header>
+
+<div class="orders-page">
+  <h1 style="font-size:26px;font-weight:800;color:#071a3a;margin-bottom:20px;">My Orders</h1>
+
+  {# Tab navigation / 标签切换 #}
+  <div class="tab-bar">
+    <a class="tab active" href="#" onclick="switchTab('purchases',this);return false;">
+      Purchases ({{ purchases|length }})
+    </a>
+    <a class="tab" href="#" onclick="switchTab('sales',this);return false;">
+      Sales ({{ sales|length }})
+    </a>
+  </div>
+
+  {# Purchases tab / 我买的 #}
+  <div class="tab-pane active" id="tab-purchases">
+    {% if purchases %}
+      {% for order in purchases %}
+      <div class="order-card">
+        {% if order.book.cover %}
+        <div class="order-cover" style="background:url('{{ order.book.cover.url }}') center/cover;"></div>
+        {% else %}
+        <div class="order-cover"></div>
+        {% endif %}
+        <div class="order-info">
+          <div class="order-title">
+            <a href="{% url 'books:detail' order.book.pk %}"
+               style="color:#071a3a;text-decoration:none;">{{ order.book.title }}</a>
+          </div>
+          <div class="order-meta">
+            by {{ order.book.author }}<br>
+            Seller: <strong>{{ order.seller.get_full_name|default:order.seller.username }}</strong>
+            &nbsp;·&nbsp; Ordered: {{ order.created_at|date:"M j, Y" }}
+          </div>
+          <div style="margin-top:5px;">
+            <span class="status-badge status-{{ order.status }}">{{ order.get_status_display }}</span>
+          </div>
+        </div>
+        <div style="text-align:right;">
+          <div class="order-price">
+            {% if order.book.price %}${{ order.book.price }}{% else %}<span style="color:#10b981;">Free</span>{% endif %}
+          </div>
+          {% if order.platform_fee %}
+          <div style="font-size:11px;color:#9ca3af;margin-top:2px;">Fee: ${{ order.platform_fee }}</div>
+          {% endif %}
+          <a href="{% url 'books:chat_user' order.seller.pk %}?book={{ order.book.pk }}"
+             class="btn-outline"
+             style="display:inline-block;margin-top:8px;padding:5px 12px;font-size:12px;text-decoration:none;border-radius:8px;">
+            Contact Seller
+          </a>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+    <div class="empty-state">
+      <div style="font-size:48px;margin-bottom:12px;">📦</div>
+      <p style="font-size:16px;font-weight:600;color:#071a3a;">No purchases yet</p>
+      <a href="{% url 'books:home' %}"
+         style="display:inline-block;margin-top:14px;padding:10px 24px;background:#2b6cff;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;">
+        Browse Books
+      </a>
+    </div>
+    {% endif %}
+  </div>
+
+  {# Sales tab / 我卖的 #}
+  <div class="tab-pane" id="tab-sales">
+    {% if sales %}
+      {% for order in sales %}
+      <div class="order-card">
+        {% if order.book.cover %}
+        <div class="order-cover" style="background:url('{{ order.book.cover.url }}') center/cover;"></div>
+        {% else %}
+        <div class="order-cover"></div>
+        {% endif %}
+        <div class="order-info">
+          <div class="order-title">
+            <a href="{% url 'books:detail' order.book.pk %}"
+               style="color:#071a3a;text-decoration:none;">{{ order.book.title }}</a>
+          </div>
+          <div class="order-meta">
+            by {{ order.book.author }}<br>
+            Buyer: <strong>{{ order.buyer.get_full_name|default:order.buyer.username }}</strong>
+            &nbsp;·&nbsp; Ordered: {{ order.created_at|date:"M j, Y" }}
+          </div>
+          <div style="margin-top:5px;">
+            <span class="status-badge status-{{ order.status }}">{{ order.get_status_display }}</span>
+          </div>
+        </div>
+        <div style="text-align:right;">
+          <div class="order-price">
+            {% if order.book.price %}${{ order.book.price }}{% else %}<span style="color:#10b981;">Free</span>{% endif %}
+          </div>
+          {% if order.platform_fee %}
+          <div style="font-size:11px;color:#9ca3af;margin-top:2px;">
+            You receive: ${{ order.book.seller_receives }}
+          </div>
+          {% endif %}
+          <a href="{% url 'books:chat_user' order.buyer.pk %}?book={{ order.book.pk }}"
+             class="btn-outline"
+             style="display:inline-block;margin-top:8px;padding:5px 12px;font-size:12px;text-decoration:none;border-radius:8px;">
+            Contact Buyer
+          </a>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+    <div class="empty-state">
+      <div style="font-size:48px;margin-bottom:12px;">🏷</div>
+      <p style="font-size:16px;font-weight:600;color:#071a3a;">No sales yet</p>
+      <a href="{% url 'books:create' %}"
+         style="display:inline-block;margin-top:14px;padding:10px 24px;background:#ff7b1a;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;">
+        List a Book
+      </a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+function switchTab(name, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+}
+</script>
+
+</body>
+</html>
+

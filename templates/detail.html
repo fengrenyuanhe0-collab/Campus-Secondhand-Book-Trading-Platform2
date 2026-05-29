@@ -1,0 +1,355 @@
+﻿{% load static %}
+{# Book detail page — shows cover gallery, price, fee breakdown, seller info, actions #}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ book.title }} — Campus Secondhand Book Trading Platform</title>
+  <link rel="stylesheet" href="{% static 'css/base.css' %}">
+  <style>
+    /* 详情页布局 / Detail page layout */
+    .detail-page { padding: 24px; max-width: 1000px; margin: 0 auto; }
+    .detail-container { display: flex; gap: 32px; align-items: flex-start; }
+
+    /* 左侧封面区域 / Left cover area */
+    .cover-section { min-width: 300px; width: 300px; }
+
+    /* 主封面图 / Main cover image */
+    .main-cover {
+      width: 100%;
+      height: 400px;
+      border-radius: 12px;
+      object-fit: cover;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+      display: block;
+      background: #e8f1ff;
+    }
+    /* 无封面占位 / No-cover placeholder */
+    .main-cover-placeholder {
+      width: 100%;
+      height: 400px;
+      border-radius: 12px;
+      background: url('{% static "img/book_placeholder.svg" %}') center/contain no-repeat, #e8f1ff;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    }
+
+    /* 多图缩略条 / Thumbnail strip for multiple images */
+    .thumb-strip {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+    .thumb {
+      width: 64px;
+      height: 90px;
+      border-radius: 6px;
+      object-fit: cover;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: border-color 0.15s;
+    }
+    .thumb:hover, .thumb.active { border-color: #2b6cff; }
+
+    /* 元数据行 / Metadata rows */
+    .meta-row { display: flex; gap: 8px; align-items: baseline; margin-top: 6px; }
+    .meta-label { font-size: 13px; color: #6b7280; min-width: 110px; }
+    .meta-val { font-size: 14px; color: #071a3a; font-weight: 600; }
+
+    /* 徽章 / Badges */
+    .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+    .badge-green { background: #d1fae5; color: #065f46; }
+    .badge-blue { background: #dbeafe; color: #1e40af; }
+    .badge-yellow { background: #fef3c7; color: #92400e; }
+
+    /* 操作按钮 / Action buttons */
+    .action-btns { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; }
+
+    /* 5% 费用说明框 / 5% fee breakdown box */
+    .fee-box {
+      background: #fffbeb;
+      border: 1.5px solid #fde68a;
+      border-radius: 10px;
+      padding: 12px 16px;
+      margin-top: 14px;
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    @media (max-width: 700px) {
+      .detail-container { flex-direction: column; }
+      .cover-section { width: 100%; min-width: unset; }
+      .main-cover, .main-cover-placeholder { height: 280px; }
+    }
+  </style>
+</head>
+<body>
+
+{% if messages %}
+<div class="flash-wrap">
+  {% for message in messages %}<div class="flash {{ message.tags }}">{{ message }}</div>{% endfor %}
+</div>
+{% endif %}
+
+{# ── Header ── #}
+<header class="header">
+  <div class="header-left">
+    <a href="{% url 'books:home' %}" style="text-decoration:none;display:flex;align-items:center;gap:10px;">
+      <img src="{% static 'img/logo.png' %}" class="logo" alt="Logo">
+      <span class="site-title">Campus Secondhand Book Trading Platform</span>
+    </a>
+  </div>
+  <div class="header-right">
+    {# Cart with badge / 购物车 #}
+    <a href="{% url 'books:cart' %}" class="cart-btn">
+      🛒 Cart
+      {% if cart_count > 0 %}<span class="cart-badge">{{ cart_count }}</span>{% endif %}
+    </a>
+    <button class="btn-outline" onclick="history.back()">← Back</button>
+    {% if user.is_authenticated %}
+    <button class="btn-outline" onclick="location.href='{% url 'users:profile' %}'">Profile</button>
+    <form method="post" action="{% url 'users:logout' %}" style="display:inline;">
+      {% csrf_token %}
+      <button type="submit" class="btn-solid">Logout</button>
+    </form>
+    {% else %}
+    <button class="btn-solid" onclick="location.href='{% url 'users:login' %}'">Login</button>
+    {% endif %}
+  </div>
+</header>
+
+{# ── Book Detail Content ── #}
+<div class="detail-page">
+  <div class="detail-container">
+
+    {# Left: cover image gallery / 左侧：封面图册 #}
+    <div class="cover-section">
+      {# Main display image (switches on thumbnail click) / 主展示图 #}
+      {% if book.cover %}
+      <img id="mainImg" src="{{ book.cover.url }}" class="main-cover" alt="{{ book.title }}">
+      {% elif book.images.exists %}
+      <img id="mainImg" src="{{ book.images.first.image.url }}" class="main-cover" alt="{{ book.title }}">
+      {% else %}
+      {# Auto-generated cover / 自动生成彩色封面 #}
+      <div id="mainImg" class="main-cover auto-cover auto-cover-large"
+           data-title="{{ book.title|escapejs }}"
+           data-author="{{ book.author|escapejs }}"></div>
+      {% endif %}
+
+      {# Thumbnail strip — cover + extra images / 缩略图条 #}
+      {% if book.cover or book.images.exists %}
+      <div class="thumb-strip">
+        {% if book.cover %}
+        {# Primary cover thumbnail / 主封面缩略图 #}
+        <img src="{{ book.cover.url }}"
+             class="thumb active"
+             onclick="switchImg(this, '{{ book.cover.url }}')"
+             alt="Cover">
+        {% endif %}
+        {# Additional photos / 附加照片 #}
+        {% for img in book.images.all %}
+        <img src="{{ img.image.url }}"
+             class="thumb"
+             onclick="switchImg(this, '{{ img.image.url }}')"
+             alt="Photo {{ forloop.counter }}">
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {# SOLD badge / 已售标记 #}
+      {% if book.is_sold %}
+      <div style="margin-top:10px;text-align:center;background:#f1f5f9;border-radius:8px;padding:10px;color:#64748b;font-weight:700;font-size:18px;">SOLD</div>
+      {% endif %}
+
+      {# Owner controls: edit, delete, mark sold / 卖家控制：编辑、删除、标记已售 #}
+      {% if is_owner %}
+      <div style="display:flex;gap:10px;margin-top:14px;">
+        <a href="{% url 'books:edit' book.pk %}" class="btn-primary"
+           style="flex:1;text-align:center;text-decoration:none;padding:10px;">Edit</a>
+        <form method="post" action="{% url 'books:delete' book.pk %}"
+              onsubmit="return confirm('Delete this listing?');" style="flex:1;">
+          {% csrf_token %}
+          <button type="submit" style="width:100%;padding:10px;background:#ef4444;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">Delete</button>
+        </form>
+      </div>
+      <form method="post" action="{% url 'books:mark_sold' book.pk %}" style="margin-top:10px;">
+        {% csrf_token %}
+        <button type="submit"
+                style="width:100%;padding:10px;font-size:14px;font-weight:600;border:none;border-radius:8px;cursor:pointer;
+                       {% if book.is_sold %}background:#d1fae5;color:#065f46;{% else %}background:#fef3c7;color:#92400e;{% endif %}">
+          {% if book.is_sold %}✓ Sold — click to relist{% else %}Mark as Sold{% endif %}
+        </button>
+      </form>
+      {% endif %}
+    </div>
+
+    {# Right: book info / 右侧：书籍信息 #}
+    <div style="flex:1;">
+      <h1 style="font-size:26px;color:#071a3a;margin-bottom:4px;">{{ book.title }}</h1>
+      <p class="muted" style="font-size:15px;margin-bottom:16px;">by <strong>{{ book.author }}</strong></p>
+
+      {# Price / 价格 #}
+      <div style="font-size:28px;font-weight:800;color:#2b6cff;margin-bottom:8px;">
+        {% if book.price %}${{ book.price }}
+        {% else %}<span style="color:#10b981;">Free / Donation</span>
+        {% endif %}
+      </div>
+
+      {# 5% platform fee breakdown / 5%平台服务费明细 #}
+      {% if book.price %}
+      <div class="fee-box">
+        <strong>Platform Fee (5%)</strong><br>
+        Book price: ${{ book.price }}<br>
+        Platform fee: <strong style="color:#ef4444;">${{ book.platform_fee_amount }}</strong><br>
+        Seller receives: <strong style="color:#10b981;">${{ book.seller_receives }}</strong>
+      </div>
+      {% endif %}
+
+      {# Description / 描述 #}
+      {% if book.description %}
+      <p style="font-size:14px;color:#4a5568;line-height:1.7;margin-top:16px;margin-bottom:20px;background:#f8faff;border-radius:8px;padding:14px;">
+        {{ book.description }}
+      </p>
+      {% endif %}
+
+      {# Academic hierarchy metadata / 学术层级元数据 #}
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        {% if book.university %}
+        <div class="meta-row"><span class="meta-label">University</span><span class="meta-val">{{ book.university.name }}</span></div>
+        {% endif %}
+        {% if book.college %}
+        <div class="meta-row"><span class="meta-label">College</span><span class="meta-val">{{ book.college }}</span></div>
+        {% endif %}
+        {% if book.program %}
+        <div class="meta-row"><span class="meta-label">Major</span><span class="meta-val">{{ book.program }}</span></div>
+        {% endif %}
+        {% if book.grade %}
+        <div class="meta-row"><span class="meta-label">Grade</span><span class="meta-val">{{ book.get_grade_display }}</span></div>
+        {% endif %}
+        {% if book.course %}
+        <div class="meta-row"><span class="meta-label">Course</span><span class="meta-val">{{ book.course }}</span></div>
+        {% endif %}
+        {% if book.category %}
+        <div class="meta-row">
+          <span class="meta-label">Category</span>
+          <span class="meta-val"><span class="badge badge-blue">{{ book.get_category_display }}</span></span>
+        </div>
+        {% endif %}
+        <div class="meta-row">
+          <span class="meta-label">Condition</span>
+          <span class="meta-val">
+            {% if book.condition == 'like_new' %}<span class="badge badge-green">Like New (98%)</span>
+            {% elif book.condition == 'good' %}<span class="badge badge-blue">Good (85%)</span>
+            {% else %}<span class="badge badge-yellow">Used (70%)</span>{% endif %}
+          </span>
+        </div>
+        {% if book.year_published %}
+        <div class="meta-row"><span class="meta-label">Published</span><span class="meta-val">{{ book.year_published }}</span></div>
+        {% endif %}
+      </div>
+
+      <hr style="margin:20px 0;border:none;border-top:1.5px solid #e8f1ff;">
+
+      {# Seller info / 卖家信息 #}
+      <div style="background:#f8faff;border-radius:10px;padding:16px;">
+        <p style="font-size:13px;color:#6b7280;margin-bottom:4px;">Seller</p>
+        <p style="font-weight:700;color:#071a3a;font-size:16px;">{{ book.seller.get_full_name|default:book.seller.username }}</p>
+        {% with profile=book.seller.profile %}
+        {% if profile.university %}<p style="font-size:13px;color:#6b7280;">{{ profile.university.name }}</p>{% endif %}
+        {% if profile.grade %}<p style="font-size:13px;color:#6b7280;">{{ profile.grade_label }}</p>{% endif %}
+        {% endwith %}
+        <p style="font-size:12px;color:#9ca3af;margin-top:4px;">Listed {{ book.created_at|date:"M j, Y" }}</p>
+      </div>
+
+      {# Action buttons / 操作按钮 #}
+      <div class="action-btns">
+        {% if not book.is_sold %}
+          {% if user.is_authenticated and not is_owner %}
+          {# Add to cart / 加入购物车 #}
+          <form method="post" action="{% url 'books:cart_add' book.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="btn-primary" style="padding:12px 28px;font-size:16px;cursor:pointer;">
+              {% if in_cart %}✓ In Cart{% else %}🛒 Add to Cart{% endif %}
+            </button>
+          </form>
+          {# Contact seller / 联系卖家 #}
+          <a href="{% url 'books:chat_user' book.seller.pk %}?book={{ book.pk }}"
+             class="btn-outline" style="padding:12px 28px;text-decoration:none;border-radius:10px;font-size:16px;">
+            Contact Seller
+          </a>
+          {% elif not user.is_authenticated %}
+          <a href="{% url 'users:login' %}?next={% url 'books:detail' book.pk %}"
+             class="btn-primary" style="padding:12px 28px;text-decoration:none;border-radius:10px;font-size:16px;">
+            Login to Buy
+          </a>
+          {% endif %}
+        {% endif %}
+        <a href="{% url 'books:home' %}" class="btn-outline"
+           style="padding:12px 24px;text-decoration:none;border-radius:10px;font-size:15px;">
+          Browse More
+        </a>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+{# Image gallery switcher + auto-cover JS #}
+<script>
+// Thumbnail click switches the main image / 点击缩略图更换主图
+function switchImg(thumb, url) {
+  const main = document.getElementById('mainImg');
+  if (main.tagName === 'IMG') {
+    main.src = url;
+  } else {
+    const img = document.createElement('img');
+    img.id = 'mainImg'; img.src = url; img.className = 'main-cover'; img.alt = 'Book photo';
+    main.replaceWith(img);
+  }
+  document.querySelectorAll('.thumb').forEach(t => t.classList.remove('active'));
+  thumb.classList.add('active');
+}
+
+// Auto-generated cover — split style (same as home page) / 详情页自动封面（同主页分区样式）
+const gradients = [
+  'linear-gradient(150deg,#1a237e,#3949ab)',
+  'linear-gradient(150deg,#880e4f,#c2185b)',
+  'linear-gradient(150deg,#1b5e20,#388e3c)',
+  'linear-gradient(150deg,#4a148c,#8e24aa)',
+  'linear-gradient(150deg,#e65100,#f9a825)',
+  'linear-gradient(150deg,#006064,#00acc1)',
+  'linear-gradient(150deg,#b71c1c,#d32f2f)',
+  'linear-gradient(150deg,#0d47a1,#1976d2)',
+  'linear-gradient(150deg,#33691e,#689f38)',
+  'linear-gradient(150deg,#4e342e,#795548)',
+];
+const titleColors = ['#FFD740','#FF80AB','#CCFF90','#EA80FC','#FFECB3','#84FFFF','#FF6E40','#40C4FF','#F4FF81','#FFAB40'];
+function hashStr(s){let h=0;for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))|0;return Math.abs(h);}
+document.querySelectorAll('.auto-cover').forEach(el => {
+  const title = el.dataset.title || '', author = el.dataset.author || '';
+  const idx = hashStr(title) % gradients.length;
+
+  const grad = document.createElement('div');
+  grad.className = 'auto-cover-grad';
+  grad.style.background = gradients[idx];
+  el.appendChild(grad);
+
+  const t = document.createElement('div');
+  t.className = 'auto-cover-title';
+  t.style.color = titleColors[idx];
+  t.textContent = title;
+  el.appendChild(t);
+
+  if (author) {
+    const a = document.createElement('div');
+    a.className = 'auto-cover-author';
+    a.textContent = author;
+    el.appendChild(a);
+  }
+});
+</script>
+
+</body>
+</html>
+

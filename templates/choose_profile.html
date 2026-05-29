@@ -1,0 +1,74 @@
+{% load static %}
+{# Post-registration profile completion — school hierarchy setup #}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Complete Your Profile — Campus Secondhand Book Trading Platform</title>
+  <link rel="stylesheet" href="{% static 'css/base.css' %}">
+  <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+  <style>
+    .auth-card { max-width: 460px; }
+    .field-error { color: #ef4444; font-size: 12px; margin-top: 4px; display: block; }
+    label { font-size: 13px; font-weight: 600; color: #071a3a; display: block; margin-bottom: 4px; }
+    .hint { font-size: 11px; color: #9ca3af; margin-top: 2px; }
+  </style>
+</head>
+<body class="auth-body">
+  <div class="auth-card">
+    {# Circular logo / 圆形 Logo #}
+    <img src="{% static 'img/logo.png' %}"
+         style="display:block;margin:0 auto 12px;width:60px;height:60px;border-radius:50%;object-fit:cover;border:3px solid #e8f1ff;"
+         alt="Logo">
+    <h2 class="auth-title" style="text-align:center;">Complete Your Profile</h2>
+    <p class="auth-sub" style="text-align:center;margin-bottom:24px;">
+      Help us match you with books for your courses.
+    </p>
+
+    <form method="post" action="{% url 'users:choose_profile' %}">
+      {% csrf_token %}
+
+      {# University / 学校 #}
+      <div style="margin-bottom:12px;">
+        <label>University</label>
+        {{ form.university }}
+        {% if form.university.errors %}<span class="field-error">{{ form.university.errors.0 }}</span>{% endif %}
+        <p class="hint">Don't see yours? Contact us to add it.</p>
+      </div>
+
+      {# College / 学院 #}
+      <div style="margin-bottom:12px;">
+        <label>College / Faculty</label>
+        {{ form.college }}
+        {% if form.college.errors %}<span class="field-error">{{ form.college.errors.0 }}</span>{% endif %}
+      </div>
+
+      {# Major / 专业 #}
+      <div style="margin-bottom:12px;">
+        <label>Major / Program</label>
+        {{ form.major }}
+        {% if form.major.errors %}<span class="field-error">{{ form.major.errors.0 }}</span>{% endif %}
+      </div>
+
+      {# Grade level — Elementary through PhD / 年级：小学到博士 #}
+      <div style="margin-bottom:12px;">
+        <label>Grade Level</label>
+        {{ form.grade }}
+        {% if form.grade.errors %}<span class="field-error">{{ form.grade.errors.0 }}</span>{% endif %}
+        <p class="hint">Ranges from Elementary School to PhD Year 5+.</p>
+      </div>
+
+      <button type="submit" class="btn-primary" style="width:100%;margin-top:24px;padding:13px;font-size:16px;">
+        Enter Community
+      </button>
+    </form>
+
+    <p style="text-align:center;margin-top:12px;">
+      <a href="{% url 'books:home' %}" style="color:#6b7280;font-size:13px;text-decoration:none;">
+        Skip for now →
+      </a>
+    </p>
+  </div>
+</body>
+</html>

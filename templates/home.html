@@ -1,0 +1,446 @@
+{% load static %}
+{# Main marketplace page — book grid, filters, cart, ads #}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Campus Secondhand Book Trading Platform</title>
+  <link rel="stylesheet" href="{% static 'css/base.css' %}">
+  <link rel="stylesheet" href="{% static 'css/home.css' %}">
+  <style>
+    /* 拖拽提示浮层 / Drag-to-cart floating hint */
+    #dragHint {
+      display: none;
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(43, 108, 255, 0.92);
+      color: #fff;
+      padding: 10px 24px;
+      border-radius: 24px;
+      font-size: 13px;
+      font-weight: 700;
+      z-index: 200;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+
+{# ── Flash messages ── #}
+{% if messages %}
+<div class="flash-wrap">
+  {% for message in messages %}
+  <div class="flash {{ message.tags }}">{{ message }}</div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{# ── Header / 顶部导航栏 ── #}
+<header class="header">
+  {# Logo + site name #}
+  <div class="header-left">
+    <a href="{% url 'index' %}">
+      <img src="{% static 'img/logo.png' %}" class="logo" alt="Logo">
+    </a>
+    <span class="site-title">Campus Secondhand Book Trading Platform</span>
+  </div>
+
+  {# Search bar / 搜索框 #}
+  <div class="header-center">
+    <form method="get" action="{% url 'books:home' %}" id="searchForm" style="width:100%;">
+      {% if selected_university %}<input type="hidden" name="university" value="{{ selected_university }}">{% endif %}
+      {% if selected_category %}<input type="hidden" name="category" value="{{ selected_category }}">{% endif %}
+      {% if selected_grade %}<input type="hidden" name="grade" value="{{ selected_grade }}">{% endif %}
+      {% if selected_college %}<input type="hidden" name="college" value="{{ selected_college }}">{% endif %}
+      <input type="text" class="search" name="search" id="searchInput"
+             value="{{ search }}" placeholder="Search by title, author, course…">
+    </form>
+  </div>
+
+  {# Right actions / 右侧操作区 #}
+  <div class="header-right">
+    {# Cart icon with badge / 购物车图标 #}
+    <a href="{% url 'books:cart' %}" class="cart-btn" title="Shopping Cart">
+      🛒 Cart
+      {% if cart_count > 0 %}<span class="cart-badge">{{ cart_count }}</span>{% endif %}
+    </a>
+    {% if user.is_authenticated %}
+      <button class="btn-outline" onclick="location.href='{% url 'users:profile' %}'">Profile</button>
+      <form method="post" action="{% url 'users:logout' %}" style="display:inline;">
+        {% csrf_token %}
+        <button type="submit" class="btn-solid">Logout</button>
+      </form>
+    {% else %}
+      <button class="btn-solid" onclick="document.getElementById('loginModal').classList.remove('hidden')">Login</button>
+      <button class="btn-outline" onclick="location.href='{% url 'users:register' %}'">Register</button>
+    {% endif %}
+  </div>
+</header>
+
+{# ── Horizontal filter bar — university > college > grade > category / 横向筛选栏 ── #}
+<form method="get" action="{% url 'books:home' %}" id="filterForm">
+  {% if search %}<input type="hidden" name="search" value="{{ search }}">{% endif %}
+  <section class="filters">
+    {# University dropdown / 学校下拉 #}
+    <select name="university" class="filter-select" onchange="this.form.submit()">
+      <option value="">All Universities</option>
+      {% for uni in universities %}
+      <option value="{{ uni.pk }}"{% if selected_university == uni.pk|stringformat:'s' %} selected{% endif %}>
+        {{ uni.name }}
+      </option>
+      {% endfor %}
+    </select>
+
+    <select name="college" class="filter-select" onchange="this.form.submit()">
+      <option value="">All Colleges</option>
+      {% for col_name in selected_uni_colleges %}
+      <option value="{{ col_name }}"{% if selected_college == col_name %} selected{% endif %}>
+        {{ col_name }}
+      </option>
+      {% endfor %}
+    </select>
+
+    <select name="grade" class="filter-select" onchange="this.form.submit()">
+      <option value="">All Grades</option>
+      {% for val, label in grades %}
+      <option value="{{ val }}"{% if selected_grade == val %} selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+
+    {# Category dropdown / 分类下拉 #}
+    <select name="category" class="filter-select" onchange="this.form.submit()">
+      <option value="">All Categories</option>
+      {% for val, label in categories %}
+      <option value="{{ val }}"{% if selected_category == val %} selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+
+    {# Price sort / 价格排序 #}
+    <select name="price_sort" class="filter-select" onchange="this.form.submit()">
+      <option value="">Price (any)</option>
+      <option value="asc"{% if price_sort == 'asc' %} selected{% endif %}>Price ↑ Low first</option>
+      <option value="desc"{% if price_sort == 'desc' %} selected{% endif %}>Price ↓ High first</option>
+    </select>
+
+    {# Date sort / 日期排序 #}
+    <select name="sort" class="filter-select" onchange="this.form.submit()">
+      <option value="newest"{% if sort_by == 'newest' %} selected{% endif %}>Newest First</option>
+      <option value="oldest"{% if sort_by == 'oldest' %} selected{% endif %}>Oldest First</option>
+    </select>
+
+    {# Clear all filters link / 清除筛选 #}
+    {% if selected_university or selected_college or selected_grade or selected_category or search or price_sort or sort_by != 'newest' %}
+    <a href="{% url 'books:home' %}"
+       style="font-size:13px;color:#ef4444;font-weight:600;text-decoration:none;white-space:nowrap;padding:0 4px;flex-shrink:0;">
+      ✕ Clear
+    </a>
+    {% endif %}
+  </section>
+</form>
+
+{# ── Three-column layout / 三栏布局 ── #}
+<div class="layout">
+
+  {# Left sidebar: category quick-nav / 左侧分类快速导航 #}
+  <aside class="left-cats">
+    <a href="{% url 'books:home' %}{% if search %}?search={{ search }}{% endif %}"
+       style="text-decoration:none;">
+      <div class="cat{% if not selected_category %} cat-active{% endif %}">All Books</div>
+    </a>
+    {% for val, label in categories %}
+    <a href="{% url 'books:home' %}?category={{ val }}{% if search %}&search={{ search }}{% endif %}{% if selected_university %}&university={{ selected_university }}{% endif %}{% if selected_grade %}&grade={{ selected_grade }}{% endif %}{% if selected_college %}&college={{ selected_college }}{% endif %}"
+       style="text-decoration:none;">
+      <div class="cat{% if selected_category == val %} cat-active{% endif %}">{{ label }}</div>
+    </a>
+    {% endfor %}
+  </aside>
+
+  {# Center: book grid / 主内容书籍网格 #}
+  <main>
+    <div class="grid" id="bookGrid">
+      {% for book in page_obj %}
+      {# Each card is draggable to the cart / 每张卡片可拖拽到购物车 #}
+      <div class="card"
+           draggable="true"
+           data-pk="{{ book.pk }}"
+           onclick="location.href='{% url 'books:detail' book.pk %}'"
+           style="cursor:pointer;">
+
+        {# Book cover — real image or auto-generated colored cover with title #}
+        {% if book.cover %}
+        <div class="cover" style="background-image:url('{{ book.cover.url }}');"></div>
+        {% else %}
+        {# Auto-generated cover: JS assigns gradient + title text / 无封面则自动生成彩色封面 #}
+        <div class="cover auto-cover"
+             data-title="{{ book.title|escapejs }}"
+             data-author="{{ book.author|escapejs }}"></div>
+        {% endif %}
+
+        <div style="width:100%;padding:0 4px 2px;">
+          <div class="title">{{ book.title|truncatechars:38 }}</div>
+          <div class="author muted">{{ book.author }}</div>
+          <div class="price">
+            {% if book.price %}${{ book.price }}
+            {% else %}<span style="color:#10b981;font-weight:700;">Free</span>
+            {% endif %}
+          </div>
+          {% if book.university %}
+          <div class="muted" style="font-size:10px;margin-top:1px;">
+            {{ book.university.abbreviation|default:book.university.name|truncatechars:20 }}
+          </div>
+          {% endif %}
+          {# Add-to-cart button (authenticated only) / 加购按钮（已登录才显示）#}
+          {% if user.is_authenticated %}
+          <form method="post" action="{% url 'books:cart_add' book.pk %}"
+                onsubmit="event.stopPropagation();" style="margin-top:4px;">
+            {% csrf_token %}
+            <button type="submit" class="card-cart-btn" onclick="event.stopPropagation();">
+              🛒 Add to Cart
+            </button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+      {% empty %}
+      {# Empty state / 空结果状态 #}
+      <div style="grid-column:1/-1;text-align:center;padding:80px 20px;color:#6b7280;">
+        <div style="font-size:48px;margin-bottom:16px;">📚</div>
+        <p style="font-size:18px;font-weight:600;color:#071a3a;">No books found</p>
+        <p style="font-size:14px;margin-top:8px;">Try adjusting your search or filters.</p>
+        <a href="{% url 'books:home' %}"
+           style="display:inline-block;margin-top:16px;padding:10px 24px;background:#2b6cff;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;">
+          Clear filters
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+
+    {# Pagination / 分页 #}
+    {% if page_obj.paginator.num_pages > 1 %}
+    <div class="pagination">
+      {% if page_obj.has_previous %}
+      <a href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if selected_university %}&university={{ selected_university }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_grade %}&grade={{ selected_grade }}{% endif %}{% if selected_college %}&college={{ selected_college }}{% endif %}"
+         class="page-link">← Prev</a>
+      {% endif %}
+      <span class="page-info">Page {{ page_obj.number }} / {{ page_obj.paginator.num_pages }} ({{ page_obj.paginator.count }} books)</span>
+      {% if page_obj.has_next %}
+      <a href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if selected_university %}&university={{ selected_university }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_grade %}&grade={{ selected_grade }}{% endif %}{% if selected_college %}&college={{ selected_college }}{% endif %}"
+         class="page-link">Next →</a>
+      {% endif %}
+    </div>
+    {% endif %}
+  </main>
+
+  {# Right sidebar: poster + sell CTA + optional ads/sponsors / 右侧广告栏 #}
+  <aside class="right-ad">
+    {# Campus poster / 校园海报 — original simple layout #}
+    {% if active_ads %}
+      {# Show paid ad if available / 有广告时展示付费广告 #}
+      {% with ad=active_ads.0 %}
+      {% if ad.link_url %}<a href="{{ ad.link_url }}" target="_blank" rel="noopener">{% endif %}
+      {% if ad.image %}
+        <img src="{{ ad.image.url }}" class="poster" alt="{{ ad.title }}">
+      {% else %}
+        <img src="{% static 'img/poster.png' %}" class="poster" alt="Poster">
+      {% endif %}
+      {% if ad.link_url %}</a>{% endif %}
+      <p style="text-align:center;font-size:12px;color:#9ca3af;margin-top:4px;">
+        Ad · {{ ad.advertiser_name|default:"Sponsor" }}
+      </p>
+      {% endwith %}
+    {% else %}
+      {# Default poster when no paid ads / 无广告时显示默认海报 #}
+      <img src="{% static 'img/poster.png' %}" class="poster" alt="Campus Announcements">
+      <p style="text-align:center;font-size:13px;color:#6b7280;margin-top:8px;">Campus Announcements</p>
+    {% endif %}
+
+    {# Sell a Book CTA / 卖书按钮 #}
+    {% if user.is_authenticated %}
+    <a href="{% url 'books:create' %}" class="sell-cta" style="margin-top:16px;">
+      + Sell a Book
+    </a>
+    <p class="fee-notice">Platform fee: 5% per sale</p>
+    {% else %}
+    <a href="{% url 'users:login' %}" class="sell-cta"
+       style="margin-top:16px;background:linear-gradient(90deg,#2b6cff,#60a5fa);">
+      Login to Sell
+    </a>
+    {% endif %}
+
+    {# Sponsors section (only if any exist) / 有赞助商时才显示 #}
+    {% if active_sponsors %}
+    <div class="sponsor-section" style="margin-top:14px;">
+      <h4>Sponsors & Donors</h4>
+      {% for sponsor in active_sponsors %}
+      <div class="sponsor-item">
+        <span class="sponsor-tier tier-{{ sponsor.tier }}">{{ sponsor.get_tier_display }}</span>
+        {% if sponsor.website %}
+        <a href="{{ sponsor.website }}" target="_blank" rel="noopener"
+           style="color:#071a3a;text-decoration:none;font-size:12px;">{{ sponsor.name }}</a>
+        {% else %}
+        <span style="font-size:12px;">{{ sponsor.name }}</span>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </aside>
+
+</div>{# end .layout #}
+
+{# Drag hint toast / 拖拽提示浮层 #}
+<div id="dragHint">Drop here to add to cart</div>
+
+{# Login modal (shown when guest clicks Login) / 登录弹窗 #}
+<div class="modal hidden" id="loginModal">
+  <div class="modal-card">
+    <button class="modal-close"
+            onclick="document.getElementById('loginModal').classList.add('hidden')">×</button>
+    <h2 style="margin-bottom:20px;color:#071a3a;font-size:22px;">Sign In</h2>
+    <form method="post" action="{% url 'users:login' %}">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ request.path }}">
+      <label style="font-size:13px;font-weight:700;color:#071a3a;display:block;margin-bottom:4px;">Email or Username</label>
+      <input type="text" name="username" placeholder="your@email.com" required
+             style="width:100%;padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:15px;margin-bottom:14px;outline:none;">
+      <label style="font-size:13px;font-weight:700;color:#071a3a;display:block;margin-bottom:4px;">Password</label>
+      <input type="password" name="password" placeholder="••••••••" required
+             style="width:100%;padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:15px;margin-bottom:20px;outline:none;">
+      <button type="submit" class="btn-primary" style="width:100%;padding:12px;font-size:16px;">Sign In</button>
+    </form>
+    <p style="text-align:center;margin-top:14px;font-size:13px;color:#6b7280;">
+      No account? <a href="{% url 'users:register' %}" style="color:#2b6cff;font-weight:600;">Register free</a>
+    </p>
+  </div>
+</div>
+
+{# ── Scripts / JS ── #}
+<script>
+// ── Auto-generated book covers (split style) / 自动生成书籍封面（分区样式）──
+// Dark gradient fills the top; white text panel sits at the bottom.
+// 深色渐变占上部，白色文字面板在下部，更像真实书封面。
+const gradients = [
+  'linear-gradient(150deg,#1a237e,#3949ab)',   // indigo
+  'linear-gradient(150deg,#880e4f,#c2185b)',   // rose
+  'linear-gradient(150deg,#1b5e20,#388e3c)',   // forest green
+  'linear-gradient(150deg,#4a148c,#8e24aa)',   // purple
+  'linear-gradient(150deg,#e65100,#f9a825)',   // amber orange
+  'linear-gradient(150deg,#006064,#00acc1)',   // teal
+  'linear-gradient(150deg,#b71c1c,#d32f2f)',   // crimson
+  'linear-gradient(150deg,#0d47a1,#1976d2)',   // royal blue
+  'linear-gradient(150deg,#33691e,#689f38)',   // olive
+  'linear-gradient(150deg,#4e342e,#795548)',   // coffee brown
+];
+const titleColors = [
+  '#FFD740', // indigo → amber gold
+  '#FF80AB', // rose → light pink
+  '#CCFF90', // forest → lime
+  '#EA80FC', // purple → orchid
+  '#FFECB3', // orange → cream
+  '#84FFFF', // teal → cyan
+  '#FF6E40', // crimson → coral
+  '#40C4FF', // blue → sky
+  '#F4FF81', // olive → yellow-green
+  '#FFAB40', // brown → warm orange
+];
+function hashStr(s) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+document.querySelectorAll('.auto-cover').forEach(el => {
+  const title  = el.dataset.title  || '';
+  const author = el.dataset.author || '';
+  const idx = hashStr(title) % gradients.length;
+
+  // Full-cover gradient background
+  const grad = document.createElement('div');
+  grad.className = 'auto-cover-grad';
+  grad.style.background = gradients[idx];
+  el.appendChild(grad);
+
+  // Title at top, vivid color
+  const t = document.createElement('div');
+  t.className = 'auto-cover-title';
+  t.style.color = titleColors[idx];
+  t.textContent = title;
+  el.appendChild(t);
+
+  // Author at bottom, italic white
+  if (author) {
+    const a = document.createElement('div');
+    a.className = 'auto-cover-author';
+    a.textContent = author;
+    el.appendChild(a);
+  }
+});
+
+
+</script>
+
+{# ── Drag-to-cart JavaScript / 拖拽到购物车 JS ── #}
+<script>
+// Drag a book card and drop on the cart button to add it
+// 拖动书籍卡片到购物车图标即可添加
+const cartBtn = document.querySelector('.cart-btn');
+const hint = document.getElementById('dragHint');
+
+document.querySelectorAll('.card[draggable]').forEach(card => {
+  card.addEventListener('dragstart', e => {
+    e.dataTransfer.setData('text/plain', card.dataset.pk);
+    hint.style.display = 'block';
+  });
+  card.addEventListener('dragend', () => { hint.style.display = 'none'; });
+});
+
+if (cartBtn) {
+  cartBtn.addEventListener('dragover', e => {
+    e.preventDefault();
+    cartBtn.style.background = '#eff6ff';
+    cartBtn.style.borderColor = '#2b6cff';
+  });
+  cartBtn.addEventListener('dragleave', () => {
+    cartBtn.style.background = '';
+    cartBtn.style.borderColor = '';
+  });
+  cartBtn.addEventListener('drop', e => {
+    e.preventDefault();
+    cartBtn.style.background = '';
+    cartBtn.style.borderColor = '';
+    hint.style.display = 'none';
+    const pk = e.dataTransfer.getData('text/plain');
+    if (!pk) return;
+    {% if user.is_authenticated %}
+    fetch('/cart/add/' + pk + '/', {
+      method: 'POST',
+      headers: { 'X-CSRFToken': '{{ csrf_token }}', 'X-Requested-With': 'XMLHttpRequest' },
+    })
+    .then(r => r.json())
+    .then(data => {
+      let badge = cartBtn.querySelector('.cart-badge');
+      if (!badge) {
+        badge = document.createElement('span');
+        badge.className = 'cart-badge';
+        cartBtn.appendChild(badge);
+      }
+      badge.textContent = data.count;
+      cartBtn.style.background = '#d1fae5';
+      setTimeout(() => { cartBtn.style.background = ''; }, 700);
+    });
+    {% else %}
+    document.getElementById('loginModal').classList.remove('hidden');
+    {% endif %}
+  });
+}
+
+// Search on Enter key
+document.getElementById('searchInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('searchForm').submit();
+});
+</script>
+
+</body>
+</html>

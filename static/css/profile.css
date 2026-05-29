@@ -1,0 +1,12 @@
+.profile{
+  max-width:1000px;margin:20px auto;background:var(--card);
+  padding:18px;border-radius:12px;box-shadow:var(--shadow);
+}
+#myListings .card .cover {
+  width: 100%;
+  aspect-ratio: 2 / 3;  
+  background-size: cover;
+  background-position: center;
+  border-radius: 8px;
+  cursor: pointer;
+}
