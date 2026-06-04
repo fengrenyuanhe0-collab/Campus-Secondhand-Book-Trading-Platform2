@@ -42,12 +42,28 @@ def home(request):
     Supports multi-dimensional filtering: university, college, grade, category, course, search.
     """
     # 获取查询参数 / Get filter parameters
-    # If 'university' is absent from URL → default to UrFU (is_featured)
-    if 'university' not in request.GET:
-        _urfu = University.objects.filter(is_featured=True).first()
-        university_id = str(_urfu.pk) if _urfu else ''
+    # university default logic:
+    #   - explicit ?university=all  → show all
+    #   - explicit ?university=X    → use X
+    #   - not in URL at all         → use user's profile university, else UrFU
+    raw_uni = request.GET.get('university', None)
+    if raw_uni is None:
+        # No explicit selection — resolve default from profile or UrFU
+        university_id = ''
+        if request.user.is_authenticated:
+            try:
+                uid = request.user.profile.university_id
+                if uid:
+                    university_id = str(uid)
+            except Exception:
+                pass
+        if not university_id:
+            _urfu = University.objects.filter(is_featured=True).first()
+            university_id = str(_urfu.pk) if _urfu else ''
+    elif raw_uni == 'all':
+        university_id = ''
     else:
-        university_id = request.GET.get('university', '').strip()
+        university_id = raw_uni.strip()
 
     college   = request.GET.get('college',    '').strip()
     major     = request.GET.get('major',      '').strip()

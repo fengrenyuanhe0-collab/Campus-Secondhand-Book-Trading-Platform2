@@ -135,13 +135,17 @@
       <option value="oldest"{% if sort_by == 'oldest' %} selected{% endif %}>Oldest</option>
     </select>
 
-    {# Clear — go to ?university= so user explicitly sees all #}
-    {% if selected_university or selected_college or selected_major or selected_grade or selected_category or search or price_sort or sort_by != 'newest' %}
-    <a href="{% url 'books:home' %}?university="
+    {# Clear — ?university=all means "user explicitly wants all universities" #}
+    {% if selected_college or selected_major or selected_grade or selected_category or search or price_sort or sort_by != 'newest' %}
+    <a href="{% url 'books:home' %}?university={{ selected_university }}"
        style="font-size:13px;color:#ef4444;font-weight:600;text-decoration:none;white-space:nowrap;padding:0 4px;flex-shrink:0;">
-      ✕ Clear
+      ✕ Clear filters
     </a>
     {% endif %}
+    <a href="{% url 'books:home' %}?university=all"
+       style="font-size:12px;color:#9ca3af;text-decoration:none;white-space:nowrap;padding:0 4px;flex-shrink:0;">
+      All schools
+    </a>
   </section>
 </form>
 
