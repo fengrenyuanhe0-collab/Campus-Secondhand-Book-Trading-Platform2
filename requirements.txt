@@ -2,10 +2,15 @@
 Django>=4.2,<5.0
 djangorestframework>=3.14
 
-# 图片处理（书籍封面、广告图片）/ Image handling (book covers, ad images)
+# 图片处理 / Image handling
 Pillow>=10.0
 
-# Redis 缓存（可选，无 Redis 时自动降级到内存缓存）
-# Redis cache (optional, falls back to in-memory if unavailable)
+# PostgreSQL 驱动 / PostgreSQL driver
+psycopg2-binary>=2.9
+
+# Redis 缓存 / Redis cache (falls back to in-memory if unavailable)
 redis>=5.0
 django-redis>=5.4
+
+# WSGI 服务器（生产）/ Production WSGI server
+gunicorn>=21.2

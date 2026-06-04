@@ -30,8 +30,8 @@ COPY . .
 # 创建必要目录 / Create necessary directories
 RUN mkdir -p media staticfiles logs
 
-# 收集静态文件 / Collect static files
-RUN python manage.py collectstatic --noinput
+# Static files are collected at runtime in entrypoint.sh
+# (needs DB connection which isn't available at build time)
 
 # 复制并设置入口脚本 / Copy and set entrypoint script
 COPY entrypoint.sh /entrypoint.sh
