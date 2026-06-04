@@ -80,66 +80,120 @@
   </div>
 </header>
 
-{# ── Horizontal filter bar — university > college > grade > category / 横向筛选栏 ── #}
+{# ── Horizontal filter bar: University → College → Major → Grade / 横向筛选栏 ── #}
 <form method="get" action="{% url 'books:home' %}" id="filterForm">
   {% if search %}<input type="hidden" name="search" value="{{ search }}">{% endif %}
   <section class="filters">
-    {# University dropdown / 学校下拉 #}
-    <select name="university" class="filter-select" onchange="this.form.submit()">
+
+    {# University / 大学 — defaults to UrFU when nothing selected #}
+    <select name="university" class="filter-select" id="flt-university" onchange="onUniChange()">
       <option value="">All Universities</option>
       {% for uni in universities %}
-      <option value="{{ uni.pk }}"{% if selected_university == uni.pk|stringformat:'s' %} selected{% endif %}>
-        {{ uni.name }}
+      <option value="{{ uni.pk }}"
+        {% if selected_university == uni.pk|stringformat:'s' %}selected{% endif %}>
+        {% if uni.is_featured %}★ {% endif %}{{ uni.abbreviation|default:uni.name }}
       </option>
       {% endfor %}
     </select>
 
-    <select name="college" class="filter-select" onchange="this.form.submit()">
+    {# College / 学院 — populated from selected university #}
+    <select name="college" class="filter-select" id="flt-college" onchange="onCollegeChange()">
       <option value="">All Colleges</option>
       {% for col_name in selected_uni_colleges %}
-      <option value="{{ col_name }}"{% if selected_college == col_name %} selected{% endif %}>
-        {{ col_name }}
-      </option>
+      <option value="{{ col_name }}"
+        {% if selected_college == col_name %}selected{% endif %}>{{ col_name }}</option>
       {% endfor %}
     </select>
 
+    {# Major / 专业 — populated from selected college #}
+    <select name="major" class="filter-select" id="flt-major" onchange="this.form.submit()">
+      <option value="">All Majors</option>
+      {% for maj_name in selected_col_majors %}
+      <option value="{{ maj_name }}"
+        {% if selected_major == maj_name %}selected{% endif %}>{{ maj_name }}</option>
+      {% endfor %}
+    </select>
+
+    {# Grade / Year #}
     <select name="grade" class="filter-select" onchange="this.form.submit()">
-      <option value="">All Grades</option>
+      <option value="">All Years</option>
       {% for val, label in grades %}
       <option value="{{ val }}"{% if selected_grade == val %} selected{% endif %}>{{ label }}</option>
       {% endfor %}
     </select>
 
-    {# Category dropdown / 分类下拉 #}
-    <select name="category" class="filter-select" onchange="this.form.submit()">
-      <option value="">All Categories</option>
-      {% for val, label in categories %}
-      <option value="{{ val }}"{% if selected_category == val %} selected{% endif %}>{{ label }}</option>
-      {% endfor %}
-    </select>
-
-    {# Price sort / 价格排序 #}
+    {# Price sort #}
     <select name="price_sort" class="filter-select" onchange="this.form.submit()">
       <option value="">Price (any)</option>
-      <option value="asc"{% if price_sort == 'asc' %} selected{% endif %}>Price ↑ Low first</option>
-      <option value="desc"{% if price_sort == 'desc' %} selected{% endif %}>Price ↓ High first</option>
+      <option value="asc"{% if price_sort == 'asc' %} selected{% endif %}>Price ↑</option>
+      <option value="desc"{% if price_sort == 'desc' %} selected{% endif %}>Price ↓</option>
     </select>
 
-    {# Date sort / 日期排序 #}
+    {# Date sort #}
     <select name="sort" class="filter-select" onchange="this.form.submit()">
-      <option value="newest"{% if sort_by == 'newest' %} selected{% endif %}>Newest First</option>
-      <option value="oldest"{% if sort_by == 'oldest' %} selected{% endif %}>Oldest First</option>
+      <option value="newest"{% if sort_by == 'newest' %} selected{% endif %}>Newest</option>
+      <option value="oldest"{% if sort_by == 'oldest' %} selected{% endif %}>Oldest</option>
     </select>
 
-    {# Clear all filters link / 清除筛选 #}
-    {% if selected_university or selected_college or selected_grade or selected_category or search or price_sort or sort_by != 'newest' %}
-    <a href="{% url 'books:home' %}"
+    {# Clear — go to ?university= so user explicitly sees all #}
+    {% if selected_university or selected_college or selected_major or selected_grade or selected_category or search or price_sort or sort_by != 'newest' %}
+    <a href="{% url 'books:home' %}?university="
        style="font-size:13px;color:#ef4444;font-weight:600;text-decoration:none;white-space:nowrap;padding:0 4px;flex-shrink:0;">
       ✕ Clear
     </a>
     {% endif %}
   </section>
 </form>
+
+<script>
+const COLLEGES_URL = "{% url 'books:ajax_colleges' %}";
+const MAJORS_URL   = "{% url 'books:ajax_majors' %}";
+
+function onUniChange() {
+  const uniId = document.getElementById('flt-university').value;
+  const colSel = document.getElementById('flt-college');
+  const majSel = document.getElementById('flt-major');
+  colSel.innerHTML = '<option value="">All Colleges</option>';
+  majSel.innerHTML = '<option value="">All Majors</option>';
+  if (!uniId) { document.getElementById('filterForm').submit(); return; }
+  fetch(`${COLLEGES_URL}?university_id=${uniId}`)
+    .then(r => r.json())
+    .then(data => {
+      data.colleges.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.name; opt.textContent = c.name;
+        colSel.appendChild(opt);
+      });
+      document.getElementById('filterForm').submit();
+    });
+}
+
+function onCollegeChange() {
+  const uniId = document.getElementById('flt-university').value;
+  const colName = document.getElementById('flt-college').value;
+  const majSel = document.getElementById('flt-major');
+  majSel.innerHTML = '<option value="">All Majors</option>';
+  if (!colName || !uniId) { document.getElementById('filterForm').submit(); return; }
+  // find college id by fetching all colleges for this uni
+  fetch(`${COLLEGES_URL}?university_id=${uniId}`)
+    .then(r => r.json())
+    .then(data => {
+      const col = data.colleges.find(c => c.name === colName);
+      if (!col) { document.getElementById('filterForm').submit(); return; }
+      return fetch(`${MAJORS_URL}?college_id=${col.id}`);
+    })
+    .then(r => r && r.json())
+    .then(data => {
+      if (!data) { document.getElementById('filterForm').submit(); return; }
+      data.majors.forEach(m => {
+        const opt = document.createElement('option');
+        opt.value = m.name; opt.textContent = m.name;
+        majSel.appendChild(opt);
+      });
+      document.getElementById('filterForm').submit();
+    });
+}
+</script>
 
 {# ── Three-column layout / 三栏布局 ── #}
 <div class="layout">

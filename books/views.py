@@ -42,13 +42,20 @@ def home(request):
     Supports multi-dimensional filtering: university, college, grade, category, course, search.
     """
     # 获取查询参数 / Get filter parameters
-    university_id = request.GET.get('university', '').strip()
-    college = request.GET.get('college', '').strip()
-    category = request.GET.get('category', '').strip()
-    grade = request.GET.get('grade', '').strip()
-    search = request.GET.get('search', '').strip()
+    # If 'university' is absent from URL → default to UrFU (is_featured)
+    if 'university' not in request.GET:
+        _urfu = University.objects.filter(is_featured=True).first()
+        university_id = str(_urfu.pk) if _urfu else ''
+    else:
+        university_id = request.GET.get('university', '').strip()
+
+    college   = request.GET.get('college',    '').strip()
+    major     = request.GET.get('major',      '').strip()
+    category  = request.GET.get('category',   '').strip()
+    grade     = request.GET.get('grade',      '').strip()
+    search    = request.GET.get('search',     '').strip()
     price_sort = request.GET.get('price_sort', '').strip()
-    sort_by = request.GET.get('sort', 'newest').strip()
+    sort_by   = request.GET.get('sort', 'newest').strip()
     page_number = request.GET.get('page', 1)
 
     # 只显示未售出的书 / Only show unsold books
@@ -59,55 +66,45 @@ def home(request):
         books_qs = books_qs.filter(university_id=university_id)
     if college:
         books_qs = books_qs.filter(college__icontains=college)
+    if major:
+        books_qs = books_qs.filter(program__icontains=major)
     if category:
         books_qs = books_qs.filter(category=category)
     if grade:
         books_qs = books_qs.filter(grade=grade)
     if search:
-        # 支持书名/作者/课程模糊搜索 / Fuzzy search on title/author/course
         books_qs = books_qs.filter(
             Q(title__icontains=search)
             | Q(author__icontains=search)
             | Q(course__icontains=search)
         )
-    # 日期排序 / Date sort
+
     if sort_by == 'oldest':
         books_qs = books_qs.order_by('created_at')
-    # default 'newest': Meta ordering already handles -created_at
-
-    # 价格排序（覆盖日期排序）/ Price sort (overrides date sort)
     if price_sort == 'asc':
         books_qs = books_qs.order_by('price')
     elif price_sort == 'desc':
         books_qs = books_qs.order_by('-price')
 
-    # 缓存大学列表（避免频繁查询）/ Cache universities (avoid repeated DB hits)
+    # 缓存大学列表 / Cache universities
     universities = cache.get('all_universities')
     if universities is None:
         universities = list(University.objects.all())
         cache.set('all_universities', universities, 3600)
 
-    # 获取当前活跃广告（最多3条）/ Get active ads (up to 3)
-    active_ads = Advertisement.objects.filter(is_active=True)[:3]
-    # 过滤未过期的广告 / Filter non-expired ads
-    active_ads = [ad for ad in active_ads if ad.is_visible]
-
-    # 获取活跃赞助商 / Get active sponsors
+    active_ads = [ad for ad in Advertisement.objects.filter(is_active=True)[:3] if ad.is_visible]
     active_sponsors = list(Sponsor.objects.filter(is_active=True)[:6])
 
-    # 分页（每页12本）/ Paginate (12 per page)
     paginator = Paginator(books_qs, 12)
     page_obj = paginator.get_page(page_number)
-
-    # 获取购物车数量（显示在顶部图标）/ Cart count for header badge
     cart = request.session.get('cart', [])
 
     logger.info(
-        'Home: search=%r uni=%r college=%r cat=%r grade=%r → %d results',
-        search, university_id, college, category, grade, paginator.count,
+        'Home: search=%r uni=%r college=%r major=%r grade=%r → %d results',
+        search, university_id, college, major, grade, paginator.count,
     )
 
-    # 当前大学下的学院列表（服务端渲染，无需 JS）/ Colleges for selected university (server-rendered)
+    # 服务端渲染学院列表 / Server-side college list for selected university
     selected_uni_colleges = []
     if university_id:
         selected_uni_colleges = list(
@@ -116,6 +113,17 @@ def home(request):
                            .order_by('name')
         )
 
+    # 服务端渲染专业列表 / Server-side major list for selected college
+    selected_col_majors = []
+    if college and university_id:
+        try:
+            col_obj = College.objects.get(university_id=university_id, name__iexact=college)
+            selected_col_majors = list(
+                col_obj.majors.values_list('name', flat=True).order_by('name')
+            )
+        except College.DoesNotExist:
+            pass
+
     context = {
         'page_obj': page_obj,
         'universities': universities,
@@ -123,6 +131,7 @@ def home(request):
         'grades': Book.GRADE_CHOICES,
         'selected_university': university_id,
         'selected_college': college,
+        'selected_major': major,
         'selected_category': category,
         'selected_grade': grade,
         'search': search,
@@ -132,6 +141,7 @@ def home(request):
         'active_sponsors': active_sponsors,
         'cart_count': len(cart),
         'selected_uni_colleges': selected_uni_colleges,
+        'selected_col_majors': selected_col_majors,
         'college_suggestions_json': _college_suggestions_json(),
     }
     return render(request, 'home.html', context)
