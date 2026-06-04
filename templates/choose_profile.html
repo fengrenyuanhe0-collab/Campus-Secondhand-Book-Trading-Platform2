@@ -1,5 +1,4 @@
 {% load static %}
-{# Post-registration profile completion — school hierarchy setup #}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,66 +8,150 @@
   <link rel="stylesheet" href="{% static 'css/base.css' %}">
   <link rel="stylesheet" href="{% static 'css/auth.css' %}">
   <style>
-    .auth-card { max-width: 460px; }
-    .field-error { color: #ef4444; font-size: 12px; margin-top: 4px; display: block; }
+    .auth-card { max-width: 480px; }
     label { font-size: 13px; font-weight: 600; color: #071a3a; display: block; margin-bottom: 4px; }
-    .hint { font-size: 11px; color: #9ca3af; margin-top: 2px; }
+    .hint  { font-size: 11px; color: #9ca3af; margin-top: 3px; }
+    .step-row { margin-bottom: 14px; }
+    select.input:disabled { background: #f3f4f6; color: #9ca3af; cursor: not-allowed; }
+    .step-arrow {
+      text-align: center; font-size: 18px; color: #c7d8ff; margin: 2px 0;
+      line-height: 1;
+    }
   </style>
 </head>
 <body class="auth-body">
-  <div class="auth-card">
-    {# Circular logo / 圆形 Logo #}
-    <img src="{% static 'img/logo.png' %}"
-         style="display:block;margin:0 auto 12px;width:60px;height:60px;border-radius:50%;object-fit:cover;border:3px solid #e8f1ff;"
-         alt="Logo">
-    <h2 class="auth-title" style="text-align:center;">Complete Your Profile</h2>
-    <p class="auth-sub" style="text-align:center;margin-bottom:24px;">
-      Help us match you with books for your courses.
-    </p>
+<div class="auth-card">
+  <img src="{% static 'img/logo.png' %}"
+       style="display:block;margin:0 auto 12px;width:60px;height:60px;border-radius:50%;object-fit:cover;border:3px solid #e8f1ff;"
+       alt="Logo">
+  <h2 class="auth-title" style="text-align:center;">Complete Your Profile</h2>
+  <p class="auth-sub" style="text-align:center;margin-bottom:24px;">
+    Tell us your university, college, and major so we can match you with the right books.
+  </p>
 
-    <form method="post" action="{% url 'users:choose_profile' %}">
-      {% csrf_token %}
+  <form method="post" action="{% url 'users:choose_profile' %}">
+    {% csrf_token %}
 
-      {# University / 学校 #}
-      <div style="margin-bottom:12px;">
-        <label>University</label>
-        {{ form.university }}
-        {% if form.university.errors %}<span class="field-error">{{ form.university.errors.0 }}</span>{% endif %}
-        <p class="hint">Don't see yours? Contact us to add it.</p>
-      </div>
+    {# Step 1: University / 选择大学 #}
+    <div class="step-row">
+      <label for="id_university">① University</label>
+      <select name="university" id="id_university" class="input">
+        <option value="">— Select University —</option>
+        {% for uni in universities %}
+        <option value="{{ uni.pk }}"
+          {% if current_university_id == uni.pk %}selected{% endif %}
+          data-featured="{{ uni.is_featured|yesno:'1,0' }}">
+          {% if uni.is_featured %}★ {% endif %}{{ uni.name }}{% if uni.country %} ({{ uni.country }}){% endif %}
+        </option>
+        {% endfor %}
+      </select>
+      <p class="hint">Ural Federal University (UrFU) is pre-selected for convenience.</p>
+    </div>
 
-      {# College / 学院 #}
-      <div style="margin-bottom:12px;">
-        <label>College / Faculty</label>
-        {{ form.college }}
-        {% if form.college.errors %}<span class="field-error">{{ form.college.errors.0 }}</span>{% endif %}
-      </div>
+    <div class="step-arrow">↓</div>
 
-      {# Major / 专业 #}
-      <div style="margin-bottom:12px;">
-        <label>Major / Program</label>
-        {{ form.major }}
-        {% if form.major.errors %}<span class="field-error">{{ form.major.errors.0 }}</span>{% endif %}
-      </div>
+    {# Step 2: College / 选择学院 #}
+    <div class="step-row">
+      <label for="id_college">② College / Faculty</label>
+      <select name="college" id="id_college" class="input">
+        <option value="">— Select University first —</option>
+      </select>
+    </div>
 
-      {# Grade level — Elementary through PhD / 年级：小学到博士 #}
-      <div style="margin-bottom:12px;">
-        <label>Grade Level</label>
-        {{ form.grade }}
-        {% if form.grade.errors %}<span class="field-error">{{ form.grade.errors.0 }}</span>{% endif %}
-        <p class="hint">Ranges from Elementary School to PhD Year 5+.</p>
-      </div>
+    <div class="step-arrow">↓</div>
 
-      <button type="submit" class="btn-primary" style="width:100%;margin-top:24px;padding:13px;font-size:16px;">
-        Enter Community
-      </button>
-    </form>
+    {# Step 3: Major / 选择专业 #}
+    <div class="step-row">
+      <label for="id_major">③ Major / Program</label>
+      <select name="major" id="id_major" class="input">
+        <option value="">— Select College first —</option>
+      </select>
+    </div>
 
-    <p style="text-align:center;margin-top:12px;">
-      <a href="{% url 'books:home' %}" style="color:#6b7280;font-size:13px;text-decoration:none;">
-        Skip for now →
-      </a>
-    </p>
-  </div>
+    <div class="step-arrow">↓</div>
+
+    {# Step 4: Grade / Year #}
+    <div class="step-row">
+      <label for="id_grade">④ Year / Grade Level</label>
+      {{ form.grade }}
+    </div>
+
+    <button type="submit" class="btn-primary"
+            style="width:100%;margin-top:20px;padding:13px;font-size:16px;">
+      Enter Community →
+    </button>
+  </form>
+
+  <p style="text-align:center;margin-top:14px;">
+    <a href="{% url 'books:home' %}" style="color:#9ca3af;font-size:13px;text-decoration:none;">
+      Skip for now
+    </a>
+  </p>
+</div>
+
+<script>
+const COLLEGES_URL = "{% url 'books:ajax_colleges' %}";
+const MAJORS_URL   = "{% url 'books:ajax_majors' %}";
+
+// Pre-selected values from existing profile
+const SAVED_COLLEGE_ID = "{{ saved_college_id|default:'' }}";
+const SAVED_MAJOR_ID   = "{{ saved_major_id|default:'' }}";
+
+const uniSel     = document.getElementById('id_university');
+const collegeSel = document.getElementById('id_college');
+const majorSel   = document.getElementById('id_major');
+
+function resetSelect(sel, placeholder) {
+  sel.innerHTML = `<option value="">${placeholder}</option>`;
+}
+
+async function loadColleges(uniId, selectCollegeId) {
+  resetSelect(collegeSel, '— Loading… —');
+  resetSelect(majorSel,   '— Select College first —');
+  if (!uniId) { resetSelect(collegeSel, '— Select University first —'); return; }
+
+  const resp = await fetch(`${COLLEGES_URL}?university_id=${uniId}`);
+  const data = await resp.json();
+  resetSelect(collegeSel, '— Select College / Faculty —');
+  data.colleges.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.id;
+    opt.textContent = c.name;
+    if (String(c.id) === String(selectCollegeId)) opt.selected = true;
+    collegeSel.appendChild(opt);
+  });
+  // If a college was pre-selected, load its majors
+  if (selectCollegeId && collegeSel.value) {
+    await loadMajors(selectCollegeId, SAVED_MAJOR_ID);
+  }
+}
+
+async function loadMajors(collegeId, selectMajorId) {
+  resetSelect(majorSel, '— Loading… —');
+  if (!collegeId) { resetSelect(majorSel, '— Select College first —'); return; }
+
+  const resp = await fetch(`${MAJORS_URL}?college_id=${collegeId}`);
+  const data = await resp.json();
+  resetSelect(majorSel, '— Select Major —');
+  data.majors.forEach(m => {
+    const opt = document.createElement('option');
+    opt.value = m.id;
+    opt.textContent = m.name;
+    if (String(m.id) === String(selectMajorId)) opt.selected = true;
+    majorSel.appendChild(opt);
+  });
+}
+
+uniSel.addEventListener('change', () => loadColleges(uniSel.value, ''));
+collegeSel.addEventListener('change', () => loadMajors(collegeSel.value, ''));
+
+// On page load: trigger cascade for saved/default university
+window.addEventListener('DOMContentLoaded', () => {
+  const initUni = uniSel.value;
+  if (initUni) {
+    loadColleges(initUni, SAVED_COLLEGE_ID);
+  }
+});
+</script>
 </body>
 </html>

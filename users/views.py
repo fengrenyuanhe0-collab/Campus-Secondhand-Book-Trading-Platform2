@@ -7,7 +7,7 @@ from django.contrib.auth.models import User
 
 from .forms import RegisterForm, ProfileForm
 from .models import UserProfile
-from books.models import Book
+from books.models import Book, University
 
 logger = logging.getLogger('users')
 
@@ -76,11 +76,29 @@ def register_view(request):
 def choose_profile(request):
     profile = request.user.profile
     form = ProfileForm(request.POST or None, instance=profile)
+
     if request.method == 'POST' and form.is_valid():
         form.save()
         messages.success(request, 'Profile updated!')
         return redirect('books:home')
-    return render(request, 'choose_profile.html', {'form': form})
+
+    # Default university = UrFU (is_featured=True); fallback to profile's current value
+    urfu = University.objects.filter(is_featured=True).first()
+    default_uni_id = profile.university_id or (urfu.pk if urfu else None)
+
+    # Pre-select UrFU if profile has no university set yet
+    if not profile.university_id and urfu:
+        profile.university = urfu
+
+    universities = University.objects.all()
+
+    return render(request, 'choose_profile.html', {
+        'form': form,
+        'universities': universities,
+        'current_university_id': default_uni_id,
+        'saved_college_id': profile.college_id or '',
+        'saved_major_id': profile.major_id or '',
+    })
 
 
 @login_required

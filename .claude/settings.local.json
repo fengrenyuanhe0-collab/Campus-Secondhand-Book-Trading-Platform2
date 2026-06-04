@@ -15,7 +15,8 @@
       "PowerShell(docker stop laughing_mestorf musing_buck keen_ritchie 2>&1)",
       "PowerShell(docker rm laughing_mestorf musing_buck keen_ritchie django_first_project-main-web-1 2>&1)",
       "Bash(\"c:\\\\Users\\\\Air\\\\Desktop\\\\vscode\\\\.conda\\\\python.exe\" manage.py check)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "PowerShell(docker logs campus_books_web 2>&1 | Where-Object { $_ -match \"Done|Gunicorn|Error|seeded|✓\" } | Select-Object -Last 10)"
     ]
   }
 }

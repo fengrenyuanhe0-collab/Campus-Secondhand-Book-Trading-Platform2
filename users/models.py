@@ -5,7 +5,7 @@ Campus Secondhand Book Trading Platform — User Profile Model
 """
 from django.db import models
 from django.contrib.auth.models import User
-from books.models import University
+from books.models import University, College, Major
 
 
 # ──────────────────────────────────────────────
@@ -44,9 +44,15 @@ class UserProfile(models.Model):
         verbose_name='University / 学校'
     )
     # 学院/系 / College or faculty
-    college = models.CharField(max_length=200, blank=True, verbose_name='College / Faculty / 学院')
+    college = models.ForeignKey(
+        College, on_delete=models.SET_NULL, null=True, blank=True,
+        verbose_name='College / Faculty / 学院'
+    )
     # 专业 / Major
-    major = models.CharField(max_length=200, blank=True, verbose_name='Major / 专业')
+    major = models.ForeignKey(
+        Major, on_delete=models.SET_NULL, null=True, blank=True,
+        verbose_name='Major / 专业'
+    )
     # 年级 / Grade
     grade = models.CharField(
         max_length=10, choices=GRADE_CHOICES, blank=True,

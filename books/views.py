@@ -12,7 +12,7 @@ from django.db.models import Q
 from django.core.cache import cache
 from django.http import JsonResponse
 
-from .models import Book, University, Message as ChatMessage, Advertisement, Sponsor, BookImage, College, Order
+from .models import Book, University, Message as ChatMessage, Advertisement, Sponsor, BookImage, College, Major, Order
 from .forms import BookForm
 
 logger = logging.getLogger('books')
@@ -522,3 +522,31 @@ def mark_sold(request, pk):
         messages.success(request, f'"{book.title}" marked as {status}.')
         logger.info('Mark sold: pk=%d is_sold=%s by %s', pk, book.is_sold, request.user.username)
     return redirect(request.META.get('HTTP_REFERER', 'users:profile'))
+
+
+# ──────────────────────────────────────────────
+# AJAX: Cascading dropdowns (university → college → major)
+# 级联下拉：大学 → 学院 → 专业
+# ──────────────────────────────────────────────
+def api_colleges(request):
+    uni_id = request.GET.get('university_id')
+    if not uni_id:
+        return JsonResponse({'colleges': []})
+    colleges = list(
+        College.objects.filter(university_id=uni_id)
+        .order_by('name')
+        .values('id', 'name')
+    )
+    return JsonResponse({'colleges': colleges})
+
+
+def api_majors(request):
+    college_id = request.GET.get('college_id')
+    if not college_id:
+        return JsonResponse({'majors': []})
+    majors = list(
+        Major.objects.filter(college_id=college_id)
+        .order_by('name')
+        .values('id', 'name')
+    )
+    return JsonResponse({'majors': majors})

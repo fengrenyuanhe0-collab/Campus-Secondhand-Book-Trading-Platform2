@@ -36,4 +36,8 @@ urlpatterns = [
 
     # 标记已售 / Mark as sold
     path('book/<int:pk>/mark-sold/', views.mark_sold, name='mark_sold'),
+
+    # AJAX 级联下拉 / AJAX cascading dropdowns
+    path('ajax/colleges/', views.api_colleges, name='ajax_colleges'),
+    path('ajax/majors/', views.api_majors, name='ajax_majors'),
 ]

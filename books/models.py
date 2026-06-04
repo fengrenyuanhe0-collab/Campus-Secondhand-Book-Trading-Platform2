@@ -57,6 +57,24 @@ class College(models.Model):
 
 
 # ──────────────────────────────────────────────
+# Major / 专业
+# ──────────────────────────────────────────────
+class Major(models.Model):
+    """专业模型 / Academic major or program under a college."""
+    college = models.ForeignKey(College, on_delete=models.CASCADE, related_name='majors')
+    name = models.CharField(max_length=200, verbose_name='Major Name')
+
+    class Meta:
+        ordering = ['name']
+        unique_together = [('college', 'name')]
+        verbose_name = 'Major / Program'
+        verbose_name_plural = 'Majors / Programs'
+
+    def __str__(self):
+        return f'{self.name} ({self.college.name})'
+
+
+# ──────────────────────────────────────────────
 # Book / 书籍
 # ──────────────────────────────────────────────
 class Book(models.Model):
