@@ -1,0 +1,9 @@
+{% load static %}
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Email Sent — Campus Secondhand Book Trading Platform</title>
+<link rel="stylesheet" href="{% static 'css/base.css' %}"><link rel="stylesheet" href="{% static 'css/auth.css' %}"></head>
+<body class="auth-body"><div class="auth-card" style="text-align:center;">
+  <div style="font-size:48px;margin-bottom:16px;">📧</div>
+  <h2 class="auth-title">Check Your Email</h2>
+  <p class="auth-sub">If an account with that email exists, we've sent a password reset link.</p>
+  <a href="{% url 'users:login' %}" class="btn-primary" style="display:block;margin-top:20px;padding:12px;text-decoration:none;">Back to Login</a>
+</div></body></html>

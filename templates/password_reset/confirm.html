@@ -1,0 +1,24 @@
+{% load static %}
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Set New Password — Campus Secondhand Book Trading Platform</title>
+<link rel="stylesheet" href="{% static 'css/base.css' %}"><link rel="stylesheet" href="{% static 'css/auth.css' %}"></head>
+<body class="auth-body"><div class="auth-card">
+  <h2 class="auth-title" style="text-align:center;">Set New Password</h2>
+  {% if validlink %}
+  <form method="post">
+    {% csrf_token %}
+    <div style="margin-bottom:12px;">
+      <label style="font-size:13px;font-weight:600;color:#071a3a;display:block;margin-bottom:4px;">New Password</label>
+      <input type="password" name="new_password1" class="input" placeholder="••••••••" required>
+    </div>
+    <div style="margin-bottom:12px;">
+      <label style="font-size:13px;font-weight:600;color:#071a3a;display:block;margin-bottom:4px;">Confirm Password</label>
+      <input type="password" name="new_password2" class="input" placeholder="••••••••" required>
+    </div>
+    {% if form.errors %}<p style="color:#ef4444;font-size:13px;">{{ form.errors }}</p>{% endif %}
+    <button type="submit" class="btn-primary" style="width:100%;padding:13px;font-size:16px;">Set Password</button>
+  </form>
+  {% else %}
+  <p style="text-align:center;color:#ef4444;">This reset link is invalid or has expired.</p>
+  <a href="{% url 'users:password_reset' %}" class="btn-primary" style="display:block;margin-top:16px;padding:12px;text-align:center;text-decoration:none;">Request New Link</a>
+  {% endif %}
+</div></body></html>

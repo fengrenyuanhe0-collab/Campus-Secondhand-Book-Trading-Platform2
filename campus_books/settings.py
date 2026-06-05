@@ -1,14 +1,13 @@
 from pathlib import Path
 import os
-import logging
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-campus-books-2024-change-in-production'
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-campus-books-2024-change-in-production')
 
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*').split(',')
 
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost:1234',
@@ -60,8 +59,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'campus_books.wsgi.application'
 
-import os
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -95,33 +92,26 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 SESSION_COOKIE_AGE = 1209600
 SESSION_SAVE_EVERY_REQUEST = True
 
-# Cache — try Redis, fall back to local memory
-_redis_ok = False
-try:
-    import redis as _r
-    _r.StrictRedis(host='127.0.0.1', port=6379, db=0, socket_connect_timeout=1).ping()
-    _redis_ok = True
-except Exception:
-    pass
+# ── Redis Cache ───────────────────────────────────────────────────────────────
+REDIS_URL = os.environ.get('REDIS_URL', 'redis://redis:6379/1')
 
-if _redis_ok:
-    CACHES = {
-        'default': {
-            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-            'LOCATION': 'redis://127.0.0.1:6379/1',
-            'TIMEOUT': 300,
-        }
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+        'LOCATION': REDIS_URL,
+        'TIMEOUT': 300,
+        'OPTIONS': {
+            'socket_connect_timeout': 2,
+            'socket_timeout': 2,
+        },
     }
-else:
-    CACHES = {
-        'default': {
-            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-            'LOCATION': 'campus-books-cache',
-            'TIMEOUT': 300,
-        }
-    }
+}
 
-# Logging
+# ── Email (console backend for demo — prints reset link to logs) ──────────────
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+DEFAULT_FROM_EMAIL = 'noreply@campus-books.example'
+
+# ── Logging ───────────────────────────────────────────────────────────────────
 LOGS_DIR = BASE_DIR / 'logs'
 LOGS_DIR.mkdir(exist_ok=True)
 

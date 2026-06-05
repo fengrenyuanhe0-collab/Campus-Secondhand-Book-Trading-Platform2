@@ -1,0 +1,10 @@
+Hello,
+
+You requested a password reset for your Campus Secondhand Book Trading Platform account.
+
+Click the link below to set a new password:
+{{ protocol }}://{{ domain }}{% url 'users:password_reset_confirm' uidb64=uid token=token %}
+
+This link expires in 24 hours. If you did not request a reset, ignore this email.
+
+— Campus Secondhand Book Trading Platform

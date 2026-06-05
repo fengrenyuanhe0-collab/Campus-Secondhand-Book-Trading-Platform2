@@ -1,23 +1,31 @@
 services:
 
-  # ── PostgreSQL Database / 独立 PostgreSQL 数据库 ──
+  # ── PostgreSQL Database ───────────────────────────────────────────────────
   db:
     image: postgres:16-alpine
     container_name: campus_books_db
     restart: unless-stopped
-    environment:
-      POSTGRES_DB:       campus_books
-      POSTGRES_USER:     campus
-      POSTGRES_PASSWORD: campus_pass
+    env_file: .env
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U campus -d campus_books"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-campus} -d ${POSTGRES_DB:-campus_books}"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  # ── Django + Gunicorn Application / 应用服务 ──
+  # ── Redis Cache ───────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: campus_books_redis
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Django + Gunicorn Application ─────────────────────────────────────────
   web:
     build: .
     image: campus-books:latest
@@ -26,15 +34,9 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    environment:
-      DJANGO_SETTINGS_MODULE: campus_books.settings
-      DEBUG:             "False"
-      ALLOWED_HOSTS:     "*"
-      POSTGRES_DB:       campus_books
-      POSTGRES_USER:     campus
-      POSTGRES_PASSWORD: campus_pass
-      POSTGRES_HOST:     db
-      POSTGRES_PORT:     "5432"
+      redis:
+        condition: service_healthy
+    env_file: .env
     volumes:
       - static_volume:/app/staticfiles
       - media_volume:/app/media
@@ -42,7 +44,7 @@ services:
     expose:
       - "8000"
 
-  # ── Nginx Reverse Proxy / 反向代理 ──
+  # ── Nginx Reverse Proxy ───────────────────────────────────────────────────
   nginx:
     image: nginx:1.25-alpine
     container_name: campus_books_nginx
