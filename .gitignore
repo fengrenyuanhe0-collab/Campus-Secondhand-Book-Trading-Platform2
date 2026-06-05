@@ -20,7 +20,6 @@ db.sqlite3
 # media/      — included (book covers)
 
 # Environment
-.env
 .venv
 venv/
 env/
@@ -34,9 +33,6 @@ env/
 # OS
 .DS_Store
 Thumbs.db
-
-# Environment variables (contains secrets)
-.env
 
 # Claude Code
 .claude/
