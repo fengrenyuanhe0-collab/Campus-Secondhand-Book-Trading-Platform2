@@ -102,11 +102,12 @@ def home(request):
     elif price_sort == 'desc':
         books_qs = books_qs.order_by('-price')
 
-    # 缓存大学列表 / Cache universities
-    universities = cache.get('all_universities')
-    if universities is None:
+    # 缓存大学列表 / Cache universities (re-fetch if cache empty or missing)
+    universities = cache.get('all_universities') or None
+    if not universities:
         universities = list(University.objects.all())
-        cache.set('all_universities', universities, 3600)
+        if universities:
+            cache.set('all_universities', universities, 3600)
 
     active_ads = [ad for ad in Advertisement.objects.filter(is_active=True)[:3] if ad.is_visible]
     active_sponsors = list(Sponsor.objects.filter(is_active=True)[:6])
