@@ -39,5 +39,8 @@ urlpatterns = [
 
     # AJAX 级联下拉 / AJAX cascading dropdowns
     path('ajax/colleges/', views.api_colleges, name='ajax_colleges'),
-    path('ajax/majors/', views.api_majors, name='ajax_majors'),
+    path('ajax/majors/',   views.api_majors,   name='ajax_majors'),
+
+    # 订单状态更新 / Order status update
+    path('order/<int:pk>/status/', views.update_order_status, name='order_status'),
 ]

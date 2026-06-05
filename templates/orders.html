@@ -106,6 +106,14 @@
              style="display:inline-block;margin-top:8px;padding:5px 12px;font-size:12px;text-decoration:none;border-radius:8px;">
             Contact Seller
           </a>
+          {% if order.status in 'pending,confirmed' %}
+          <form method="post" action="{% url 'books:order_status' order.pk %}" style="display:inline;">
+            {% csrf_token %}<input type="hidden" name="status" value="cancelled">
+            <button type="submit" style="margin-top:6px;display:block;width:100%;padding:5px 12px;font-size:12px;background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;border-radius:8px;cursor:pointer;">
+              Cancel
+            </button>
+          </form>
+          {% endif %}
         </div>
       </div>
       {% endfor %}
@@ -159,6 +167,32 @@
              style="display:inline-block;margin-top:8px;padding:5px 12px;font-size:12px;text-decoration:none;border-radius:8px;">
             Contact Buyer
           </a>
+          <div style="margin-top:6px;display:flex;flex-direction:column;gap:4px;">
+            {% if order.status == 'pending' %}
+            <form method="post" action="{% url 'books:order_status' order.pk %}">
+              {% csrf_token %}<input type="hidden" name="status" value="confirmed">
+              <button type="submit" style="width:100%;padding:5px 12px;font-size:12px;background:#dbeafe;color:#1e40af;border:1px solid #93c5fd;border-radius:8px;cursor:pointer;">
+                ✓ Confirm
+              </button>
+            </form>
+            {% endif %}
+            {% if order.status == 'confirmed' %}
+            <form method="post" action="{% url 'books:order_status' order.pk %}">
+              {% csrf_token %}<input type="hidden" name="status" value="completed">
+              <button type="submit" style="width:100%;padding:5px 12px;font-size:12px;background:#d1fae5;color:#065f46;border:1px solid #6ee7b7;border-radius:8px;cursor:pointer;">
+                ✓ Complete
+              </button>
+            </form>
+            {% endif %}
+            {% if order.status in 'pending,confirmed' %}
+            <form method="post" action="{% url 'books:order_status' order.pk %}">
+              {% csrf_token %}<input type="hidden" name="status" value="cancelled">
+              <button type="submit" style="width:100%;padding:5px 12px;font-size:12px;background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;border-radius:8px;cursor:pointer;">
+                ✕ Cancel
+              </button>
+            </form>
+            {% endif %}
+          </div>
         </div>
       </div>
       {% endfor %}

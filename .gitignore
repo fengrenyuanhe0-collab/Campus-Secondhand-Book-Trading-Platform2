@@ -13,8 +13,10 @@ build/
 local_settings.py
 staticfiles/
 
-# Keep db and media for demo deployment
-# db.sqlite3 — included (demo data)
+# SQLite is for local dev only; production uses PostgreSQL via Docker
+db.sqlite3
+
+# Keep media for demo deployment
 # media/      — included (book covers)
 
 # Environment

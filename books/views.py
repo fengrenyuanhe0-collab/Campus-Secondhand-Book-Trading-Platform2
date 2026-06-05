@@ -64,6 +64,19 @@ def home(request):
         university_id = ''
     else:
         university_id = raw_uni.strip()
+        # If pk doesn't exist in this DB, fall back to profile/UrFU
+        if university_id and not University.objects.filter(pk=university_id).exists():
+            university_id = ''
+            if request.user.is_authenticated:
+                try:
+                    uid = request.user.profile.university_id
+                    if uid:
+                        university_id = str(uid)
+                except Exception:
+                    pass
+            if not university_id:
+                _urfu = University.objects.filter(is_featured=True).first()
+                university_id = str(_urfu.pk) if _urfu else ''
 
     college   = request.GET.get('college',    '').strip()
     major     = request.GET.get('major',      '').strip()
@@ -555,6 +568,30 @@ def mark_sold(request, pk):
 # AJAX: Cascading dropdowns (university → college → major)
 # 级联下拉：大学 → 学院 → 专业
 # ──────────────────────────────────────────────
+@login_required
+def update_order_status(request, pk):
+    """Seller confirms/completes; buyer or seller cancels."""
+    order = get_object_or_404(Order, pk=pk)
+    if request.method != 'POST':
+        return redirect('books:orders')
+    new_status = request.POST.get('status', '')
+    allowed = {
+        'confirmed':  order.seller == request.user and order.status == 'pending',
+        'completed':  order.seller == request.user and order.status == 'confirmed',
+        'cancelled':  request.user in (order.buyer, order.seller) and order.status in ('pending', 'confirmed'),
+    }
+    if new_status in allowed and allowed[new_status]:
+        order.status = new_status
+        order.save(update_fields=['status', 'updated_at'])
+        if new_status == 'cancelled':
+            order.book.is_sold = False
+            order.book.save(update_fields=['is_sold'])
+        messages.success(request, f'Order #{pk} marked as {new_status}.')
+    else:
+        messages.error(request, 'Action not allowed.')
+    return redirect('books:orders')
+
+
 def api_colleges(request):
     uni_id = request.GET.get('university_id')
     if not uni_id:

@@ -91,7 +91,7 @@
       {% for uni in universities %}
       <option value="{{ uni.pk }}"
         {% if selected_university == uni.pk|stringformat:'s' %}selected{% endif %}>
-        {% if uni.is_featured %}★ {% endif %}{{ uni.abbreviation|default:uni.name }}
+        {% if uni.is_featured %}★ {% endif %}{{ uni.name }}
       </option>
       {% endfor %}
     </select>
@@ -295,25 +295,58 @@ function onCollegeChange() {
   {# Right sidebar: poster + sell CTA + optional ads/sponsors / 右侧广告栏 #}
   <aside class="right-ad">
     {# Campus poster / 校园海报 — original simple layout #}
-    {% if active_ads %}
-      {# Show paid ad if available / 有广告时展示付费广告 #}
-      {% with ad=active_ads.0 %}
-      {% if ad.link_url %}<a href="{{ ad.link_url }}" target="_blank" rel="noopener">{% endif %}
-      {% if ad.image %}
-        <img src="{{ ad.image.url }}" class="poster" alt="{{ ad.title }}">
-      {% else %}
-        <img src="{% static 'img/poster.png' %}" class="poster" alt="Poster">
-      {% endif %}
-      {% if ad.link_url %}</a>{% endif %}
-      <p style="text-align:center;font-size:12px;color:#9ca3af;margin-top:4px;">
-        Ad · {{ ad.advertiser_name|default:"Sponsor" }}
-      </p>
-      {% endwith %}
-    {% else %}
-      {# Default poster when no paid ads / 无广告时显示默认海报 #}
-      <img src="{% static 'img/poster.png' %}" class="poster" alt="Campus Announcements">
-      <p style="text-align:center;font-size:13px;color:#6b7280;margin-top:8px;">Campus Announcements</p>
-    {% endif %}
+    {# Poster + ads rotating carousel — poster is always slide 0 / 海报+广告轮播 #}
+    <div id="adCarousel" style="position:relative;">
+
+      {# Slide 0: default poster / 第一张：默认海报 #}
+      <div class="ad-slide">
+        <img src="{% static 'img/poster.png' %}" class="poster" alt="Campus Announcements">
+        <p style="text-align:center;font-size:13px;color:#6b7280;margin-top:6px;">Campus Announcements</p>
+      </div>
+
+      {# Slides 1…n: paid ads / 后续：付费广告 #}
+      {% for ad in active_ads %}
+      <div class="ad-slide" style="display:none;">
+        {% if ad.link_url %}<a href="{{ ad.link_url }}" target="_blank" rel="noopener" style="text-decoration:none;">{% endif %}
+        {% if ad.image %}
+          <img src="{{ ad.image.url }}" class="poster" alt="{{ ad.title }}">
+        {% else %}
+          <div style="background:linear-gradient(135deg,#1e3a5f,#2b6cff);border-radius:12px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:10px;text-align:center;width:100%;aspect-ratio:3/4;padding:20px 16px;box-sizing:border-box;">
+            <div style="font-size:16px;font-weight:800;color:#fff;line-height:1.4;">{{ ad.title }}</div>
+            {% if ad.advertiser_name %}<div style="font-size:12px;color:rgba(255,255,255,0.8);">{{ ad.advertiser_name }}</div>{% endif %}
+          </div>
+        {% endif %}
+        {% if ad.link_url %}</a>{% endif %}
+        <p style="text-align:center;font-size:11px;color:#9ca3af;margin-top:6px;">Sponsored · {{ ad.advertiser_name|default:"Partner" }}</p>
+      </div>
+      {% endfor %}
+
+      {# Dot indicators / 小圆点指示器 #}
+      <div style="text-align:center;margin-top:4px;display:flex;justify-content:center;gap:5px;" id="adDots"></div>
+    </div>
+
+    <script>
+    (function(){
+      var slides = document.querySelectorAll('#adCarousel .ad-slide');
+      var dotsEl = document.getElementById('adDots');
+      var idx = 0;
+      // build dots
+      slides.forEach(function(_, i){
+        var d = document.createElement('span');
+        d.style.cssText = 'width:7px;height:7px;border-radius:50%;background:'+(i===0?'#2b6cff':'#d1d5db')+';display:inline-block;cursor:pointer;transition:background .3s';
+        d.onclick = function(){ go(i); };
+        dotsEl.appendChild(d);
+      });
+      function go(i){
+        slides[idx].style.display = 'none';
+        dotsEl.children[idx].style.background = '#d1d5db';
+        idx = (i + slides.length) % slides.length;
+        slides[idx].style.display = 'block';
+        dotsEl.children[idx].style.background = '#2b6cff';
+      }
+      if(slides.length > 1) setInterval(function(){ go(idx+1); }, 4000);
+    })();
+    </script>
 
     {# Sell a Book CTA / 卖书按钮 #}
     {% if user.is_authenticated %}

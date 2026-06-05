@@ -5,7 +5,7 @@ Django 后台管理注册 / Django admin registration
 Commercial models (ads, sponsors) are manageable in the admin panel.
 """
 from django.contrib import admin
-from .models import University, Book, Order, Message, Advertisement, Sponsor, BookImage, College
+from .models import University, Book, Order, Message, Advertisement, Sponsor, BookImage, College, Major
 
 
 @admin.register(Book)
@@ -57,6 +57,19 @@ class CollegeAdmin(admin.ModelAdmin):
     search_fields = ('name', 'university__name')
     list_filter = ('university',)
     raw_id_fields = ('university',)
+
+
+# 专业管理 / Major admin
+@admin.register(Major)
+class MajorAdmin(admin.ModelAdmin):
+    list_display = ('name', 'college', 'college__university')
+    search_fields = ('name', 'college__name', 'college__university__name')
+    list_filter = ('college__university',)
+    raw_id_fields = ('college',)
+
+    def college__university(self, obj):
+        return obj.college.university
+    college__university.short_description = 'University'
 
 
 # 书籍额外图片管理 / BookImage admin

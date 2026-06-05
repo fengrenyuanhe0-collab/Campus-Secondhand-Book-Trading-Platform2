@@ -495,7 +495,7 @@ class Command(BaseCommand):
             )
             self.stdout.write(f'  Book: {data["title"]}')
 
-        self.stdout.write(self.style.SUCCESS('\n✓ Done!'))
+        self.stdout.write(self.style.SUCCESS('\nDone! Seed complete.'))
         self.stdout.write('  admin / admin123456  (superuser)')
         self.stdout.write('  alice / password123')
         self.stdout.write('  bob   / password123')

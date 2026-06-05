@@ -5,7 +5,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-campus-books-2024-change-in-production')
 
-DEBUG = os.environ.get('DEBUG', 'False') == 'True'
+# Local dev (no POSTGRES_HOST) → DEBUG=True so static files work
+DEBUG = os.environ.get('DEBUG', 'True' if not os.environ.get('POSTGRES_HOST') else 'False') == 'True'
 
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*').split(',')
 
@@ -59,16 +60,26 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'campus_books.wsgi.application'
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME':     os.environ.get('POSTGRES_DB',       'campus_books'),
-        'USER':     os.environ.get('POSTGRES_USER',     'campus'),
-        'PASSWORD': os.environ.get('POSTGRES_PASSWORD', 'campus_pass'),
-        'HOST':     os.environ.get('POSTGRES_HOST',     'db'),
-        'PORT':     os.environ.get('POSTGRES_PORT',     '5432'),
+# Use PostgreSQL in Docker (POSTGRES_HOST set via .env),
+# fall back to SQLite for local development
+if os.environ.get('POSTGRES_HOST'):
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME':     os.environ.get('POSTGRES_DB',       'campus_books'),
+            'USER':     os.environ.get('POSTGRES_USER',     'campus'),
+            'PASSWORD': os.environ.get('POSTGRES_PASSWORD', 'campus_pass'),
+            'HOST':     os.environ.get('POSTGRES_HOST',     'db'),
+            'PORT':     os.environ.get('POSTGRES_PORT',     '5432'),
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
@@ -95,17 +106,24 @@ SESSION_SAVE_EVERY_REQUEST = True
 # ── Redis Cache ───────────────────────────────────────────────────────────────
 REDIS_URL = os.environ.get('REDIS_URL', 'redis://redis:6379/1')
 
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-        'LOCATION': REDIS_URL,
-        'TIMEOUT': 300,
-        'OPTIONS': {
-            'socket_connect_timeout': 2,
-            'socket_timeout': 2,
-        },
+if os.environ.get('POSTGRES_HOST'):
+    # Docker environment — use Redis
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+            'LOCATION': REDIS_URL,
+            'TIMEOUT': 300,
+            'OPTIONS': {'socket_connect_timeout': 2, 'socket_timeout': 2},
+        }
     }
-}
+else:
+    # Local development — no Redis needed, use memory cache
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'TIMEOUT': 300,
+        }
+    }
 
 # ── Email (console backend for demo — prints reset link to logs) ──────────────
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
