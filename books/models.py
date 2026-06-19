@@ -123,16 +123,16 @@ class Book(models.Model):
     ]
 
     # 基本信息 / Basic info
-    title = models.CharField(max_length=300, verbose_name='Book Title / 书名')
-    author = models.CharField(max_length=200, verbose_name='Author / 作者')
+    title = models.CharField(max_length=300, verbose_name='Book Title')
+    author = models.CharField(max_length=200, verbose_name='Author')
     price = models.DecimalField(
         max_digits=8, decimal_places=2, null=True, blank=True,
-        verbose_name='Price / 价格'
+        verbose_name='Price'
     )
-    description = models.TextField(blank=True, verbose_name='Description / 描述')
+    description = models.TextField(blank=True, verbose_name='Description')
     cover = models.ImageField(
         upload_to='covers/', blank=True, null=True,
-        verbose_name='Cover Image / 封面图'
+        verbose_name='Cover Image'
     )
 
     # 学校筛选体系 / School hierarchy filters
@@ -175,8 +175,8 @@ class Book(models.Model):
 
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Book / 书籍'
-        verbose_name_plural = 'Books / 书籍列表'
+        verbose_name = 'Book'
+        verbose_name_plural = 'Books'
 
     def __str__(self):
         return f'{self.title} by {self.author}'
@@ -299,8 +299,8 @@ class Advertisement(models.Model):
 
     class Meta:
         ordering = ['position', '-created_at']
-        verbose_name = 'Advertisement / 广告'
-        verbose_name_plural = 'Advertisements / 广告列表'
+        verbose_name = 'Advertisement'
+        verbose_name_plural = 'Advertisements'
 
     def __str__(self):
         return f'Ad: {self.title} ({self.advertiser_name})'
@@ -335,8 +335,8 @@ class BookImage(models.Model):
 
     class Meta:
         ordering = ['order', 'id']
-        verbose_name = 'Book Photo / 书籍照片'
-        verbose_name_plural = 'Book Photos / 书籍照片列表'
+        verbose_name = 'Book Photo'
+        verbose_name_plural = 'Book Photos'
 
     def __str__(self):
         return f'Photo for "{self.book.title}" #{self.pk}'
@@ -352,11 +352,11 @@ class Sponsor(models.Model):
     Revenue stream: accept corporate sponsorships and individual donations.
     """
     TIER_CHOICES = [
-        ('platinum', 'Platinum / 铂金赞助'),
-        ('gold', 'Gold / 黄金赞助'),
-        ('silver', 'Silver / 白银赞助'),
-        ('bronze', 'Bronze / 青铜赞助'),
-        ('donor', 'Individual Donor / 个人捐赠者'),
+        ('platinum', 'Platinum'),
+        ('gold', 'Gold'),
+        ('silver', 'Silver'),
+        ('bronze', 'Bronze'),
+        ('donor', 'Individual Donor'),
     ]
 
     name = models.CharField(max_length=200, verbose_name='Name / 赞助商名称')
@@ -380,8 +380,8 @@ class Sponsor(models.Model):
 
     class Meta:
         ordering = ['tier', 'name']
-        verbose_name = 'Sponsor / 赞助商'
-        verbose_name_plural = 'Sponsors / 赞助商列表'
+        verbose_name = 'Sponsor'
+        verbose_name_plural = 'Sponsors'
 
     def __str__(self):
         return f'{self.get_tier_display()} — {self.name}'
